@@ -11,6 +11,9 @@ jobs:
   build:
     name: Build & Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Checkout Code
@@ -40,6 +43,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: app/build/outputs/apk/debug/app-debug.apk
-          generate_release_notes: true
+          generate_release_notes: false
+          body: |
+            ## 📱 LabelMaker APK Release
+
+            This release includes the latest build of the LabelMaker Android application.
+
+            ### ✨ Features
+            - Material Design 3 UI
+            - A4 Cable Label Generator
+            - Rate List Generator
+            - PDF & PNG Export
+            - Full customization options
+
+            ### 📦 Artifacts
+            - `app-debug.apk` - Debug build ready for testing
+
+            To install: Transfer the APK to your Android device and open it, or use Android Studio to install the APK directly.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
