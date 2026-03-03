@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:elevation="4dp"
+                app:title="Cable Label Maker"
+                app:titleTextColor="?attr/colorOnPrimary"
+                app:navigationIcon="@drawable/ic_menu" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+            <ScrollView
+                android:id="@+id/control_panel"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:contentPadding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Label Text"
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/text_input"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="top"
+                                    android:inputType="textMultiLine"
+                                    android:minLines="3"
+                                    android:maxLines="5" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:contentPadding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Grid Settings"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                                android:layout_marginBottom="8dp" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="Rows"
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/rows_input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:text="10" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="12dp"
+                                    android:hint="Columns"
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/columns_input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:text="3" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="12dp"
+                                    android:hint="Font Size"
+                                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/font_size_input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:inputType="number"
+                                        android:text="12" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:contentPadding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Text Color"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                                android:layout_marginBottom="8dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/text_color_button"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Select Text Color"
+                                app:icon="@drawable/ic_palette"
+                                style="@style/Widget.Material3.Button.TonalButton" />
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        app:cardElevation="2dp"
+                        app:cardCornerRadius="12dp"
+                        app:contentPadding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Gradient Editor"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                                android:layout_marginBottom="8dp" />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/start_color_button"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Start Color"
+                                    app:icon="@drawable/ic_gradient"
+                                    style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/end_color_button"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:layout_marginStart="12dp"
+                                    android:text="End Color"
+                                    app:icon="@drawable/ic_gradient"
+                                    style="@style/Widget.Material3.Button.OutlinedButton" />
+
+                            </LinearLayout>
+
+                        </LinearLayout>
+
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/export_button"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Export to PDF"
+                        android:textSize="16sp"
+                        app:icon="@drawable/ic_pdf"
+                        app:iconGravity="textStart"
+                        style="@style/Widget.Material3.Button.Icon" />
+
+                </LinearLayout>
+            </ScrollView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:layout_margin="8dp"
+                app:cardElevation="4dp"
+                app:cardCornerRadius="8dp">
+
+                <com.example.labelmaker.A4PreviewView
+                    android:id="@+id/a4_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/white" />
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigation_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:headerLayout="@layout/nav_header_main"
+        app:menu="@menu/main_drawer_menu" />
+
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Color Preview -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_marginBottom="24dp"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="8dp">
+
+        <View
+            android:id="@+id/color_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- RGB Sliders -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Red"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_marginBottom="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <SeekBar
+            android:id="@+id/red_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="255"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/red_value"
+            android:layout_width="48dp"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Green"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_marginBottom="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <SeekBar
+            android:id="@+id/green_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="255"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/green_value"
+            android:layout_width="48dp"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Blue"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_marginBottom="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="24dp">
+
+        <SeekBar
+            android:id="@+id/blue_seekbar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:max="255"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/blue_value"
+            android:layout_width="48dp"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textAlignment="center"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium" />
+
+    </LinearLayout>
+
+    <!-- Preset Colors -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Quick Colors"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:layout_marginBottom="8dp" />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:columnCount="4"
+        android:rowCount="2">
+
+        <View
+            android:id="@+id/preset_black"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <View
+            android:id="@+id/preset_white"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <View
+            android:id="@+id/preset_red"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <View
+            android:id="@+id/preset_green"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <View
+            android:id="@+id/preset_blue"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <View
+            android:id="@+id/preset_yellow"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <View
+            android:id="@+id/preset_cyan"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+        <View
+            android:id="@+id/preset_magenta"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_columnWeight="1"
+            android:layout_margin="4dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+
+    </GridLayout>
+
+</LinearLayout>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:background="?attr/colorPrimaryContainer"
+    android:gravity="bottom"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:paddingBottom="16dp">
+
+    <ImageView
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:src="@drawable/ic_launcher_foreground"
+        android:contentDescription="App Icon"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cable Label Maker"
+        android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+        android:textColor="?attr/colorOnPrimaryContainer" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create professional cable labels"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        android:alpha="0.7"
+        android:layout_marginTop="4dp" />
+
+</LinearLayout>
