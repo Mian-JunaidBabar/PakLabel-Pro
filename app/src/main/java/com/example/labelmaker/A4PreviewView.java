@@ -179,9 +179,7 @@ public class A4PreviewView extends View {
         textPaint.setColor(textColor);
         textPaint.setShader(null);
         
-        // Measure text bounds for centering
         if (labelText == null) labelText = "";
-        textPaint.getTextBounds(labelText.isEmpty() ? " " : labelText, 0, labelText.isEmpty() ? 1 : labelText.length(), textBounds);
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -196,13 +194,22 @@ public class A4PreviewView extends View {
                 // Draw label background
                 canvas.drawRect(cellLeft, cellTop, cellRight, cellBottom, labelBgPaint);
                 
-                // Center text vertically
                 float centerX = cellLeft + cellWidth / 2f;
                 float centerY = cellTop + cellHeight / 2f;
-                float textY = centerY - textBounds.exactCenterY();
 
                 if (!labelText.isEmpty()) {
-                    canvas.drawText(labelText, centerX, textY, textPaint);
+                    String[] lines = labelText.split("\n", -1); // -1 ensures trailing newlines are kept as empty lines
+                    Paint.FontMetrics fm = textPaint.getFontMetrics();
+                    float lineHeight = fm.descent - fm.ascent;
+                    // Add slight padding between lines
+                    float lineSpacing = scaledFontSize * 0.15f; 
+                    float totalHeight = (lineHeight * lines.length) + (lineSpacing * (lines.length - 1));
+                    
+                    float startY = centerY - totalHeight / 2f - fm.ascent;
+                    
+                    for (int i = 0; i < lines.length; i++) {
+                        canvas.drawText(lines[i], centerX, startY + (i * (lineHeight + lineSpacing)), textPaint);
+                    }
                 }
             }
         }
@@ -254,10 +261,7 @@ public class A4PreviewView extends View {
         pdfTextPaint.setColor(textColor);
         pdfTextPaint.setShader(null);
 
-        Rect bounds = new Rect();
-        if (!labelText.isEmpty()) {
-            pdfTextPaint.getTextBounds(labelText, 0, labelText.length(), bounds);
-        }
+
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
@@ -274,10 +278,19 @@ public class A4PreviewView extends View {
                 
                 float centerX = cellLeft + cellWidth / 2f;
                 float centerY = cellTop + cellHeight / 2f;
-                float textY = centerY - bounds.exactCenterY();
 
                 if (!labelText.isEmpty()) {
-                    canvas.drawText(labelText, centerX, textY, pdfTextPaint);
+                    String[] lines = labelText.split("\n", -1);
+                    Paint.FontMetrics fm = pdfTextPaint.getFontMetrics();
+                    float lineHeight = fm.descent - fm.ascent;
+                    float lineSpacing = fontSize * 0.15f;
+                    float totalHeight = (lineHeight * lines.length) + (lineSpacing * (lines.length - 1));
+                    
+                    float startY = centerY - totalHeight / 2f - fm.ascent;
+                    
+                    for (int i = 0; i < lines.length; i++) {
+                        canvas.drawText(lines[i], centerX, startY + (i * (lineHeight + lineSpacing)), pdfTextPaint);
+                    }
                 }
             }
         }
