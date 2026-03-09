@@ -34,10 +34,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import androidx.recyclerview.widget.ItemTouchHelper;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -54,7 +58,8 @@ public class RateListFragment extends Fragment {
     private RecyclerView rateListRecycler;
     private LinearLayout rateListContainer;
     private MaterialButton btnExportPdf, btnExportPng;
-    private MaterialButton btnSavePreset, btnLoadPreset;
+    private MaterialButton btnSaveCurrentPreset;
+    private ChipGroup chipGroupPresets;
     private ExtendedFloatingActionButton fabAddItem;
     private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
     private TextView fontSizeLabel, rowPaddingLabel, columnWidthLabel, tvA4Warning;
@@ -95,6 +100,7 @@ public class RateListFragment extends Fragment {
         setupDefaultColumns();
         setupRecyclerView();
         setupListeners();
+        loadPresetChips();
         rebuildHeaderRow();
 
         return view;
@@ -130,8 +136,8 @@ public class RateListFragment extends Fragment {
         rateListContainer = view.findViewById(R.id.rate_list_container);
         btnExportPdf = view.findViewById(R.id.btn_export_pdf);
         btnExportPng = view.findViewById(R.id.btn_export_png);
-        btnSavePreset = view.findViewById(R.id.btn_save_preset);
-        btnLoadPreset = view.findViewById(R.id.btn_load_preset);
+        btnSaveCurrentPreset = view.findViewById(R.id.btn_save_current_preset);
+        chipGroupPresets = view.findViewById(R.id.chip_group_presets);
         fabAddItem = view.findViewById(R.id.fab_add_item);
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
         seekbarRowPadding = view.findViewById(R.id.seekbar_row_padding);
@@ -175,6 +181,30 @@ public class RateListFragment extends Fragment {
         adapter.setRowPadding(globalRowPadding);
         rateListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         rateListRecycler.setAdapter(adapter);
+
+        ItemTouchHelper.SimpleCallback touchHelperCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                RowModel deletedRow = adapter.getRows().get(position);
+                adapter.getRows().remove(position);
+                adapter.notifyItemRemoved(position);
+
+                Snackbar snackbar = Snackbar.make(requireView(), "Item Deleted", Snackbar.LENGTH_LONG);
+                snackbar.setAction("UNDO", v -> {
+                    adapter.getRows().add(position, deletedRow);
+                    adapter.notifyItemInserted(position);
+                    rateListRecycler.scrollToPosition(position);
+                });
+                snackbar.show();
+            }
+        };
+        new ItemTouchHelper(touchHelperCallback).attachToRecyclerView(rateListRecycler);
     }
 
     private void setupListeners() {
@@ -196,8 +226,7 @@ public class RateListFragment extends Fragment {
 
         btnExportPdf.setOnClickListener(v -> exportPdf());
         btnExportPng.setOnClickListener(v -> exportPng());
-        btnSavePreset.setOnClickListener(v -> showSavePresetDialog());
-        btnLoadPreset.setOnClickListener(v -> showLoadPresetDialog());
+        btnSaveCurrentPreset.setOnClickListener(v -> showSavePresetDialog());
 
         // Typography seekbars
         seekbarFontSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -498,36 +527,39 @@ public class RateListFragment extends Fragment {
 
             presetManager.savePreset(name, state);
             Toast.makeText(requireContext(), "Preset '" + name + "' saved!", Toast.LENGTH_SHORT).show();
+            loadPresetChips();
         });
         builder.setNegativeButton("Cancel", null);
-        AlertDialog dialog = builder.create();
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.show();
+        builder.show();
     }
 
-    private void showLoadPresetDialog() {
-        List<String> presets = presetManager.getAllPresetNames();
-        if (presets.isEmpty()) {
-            Toast.makeText(requireContext(), "No saved presets found.", Toast.LENGTH_SHORT).show();
-            return;
+    private void loadPresetChips() {
+        chipGroupPresets.removeAllViews();
+        List<String> names = presetManager.getAllPresetNames();
+        for (String name : names) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(name);
+            chip.setCheckable(false);
+            chip.setCloseIconVisible(true);
+
+            chip.setOnClickListener(v -> {
+                RateListPresetState state = presetManager.loadPreset(name, RateListPresetState.class);
+                if (state != null) {
+                    applyPresetState(state);
+                    Toast.makeText(requireContext(), "Loaded preset: " + name, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Error loading preset", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            chip.setOnCloseIconClickListener(v -> {
+                presetManager.deletePreset(name);
+                chipGroupPresets.removeView(chip);
+                Toast.makeText(requireContext(), "Preset Deleted", Toast.LENGTH_SHORT).show();
+            });
+
+            chipGroupPresets.addView(chip);
         }
-
-        String[] presetArray = presets.toArray(new String[0]);
-
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Load Preset")
-                .setItems(presetArray, (dialog, which) -> {
-                    String selectedPreset = presetArray[which];
-                    RateListPresetState state = presetManager.loadPreset(selectedPreset, RateListPresetState.class);
-                    if (state != null) {
-                        applyPresetState(state);
-                        Toast.makeText(requireContext(), "Loaded preset: " + selectedPreset, Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(requireContext(), "Error loading preset", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     private void applyPresetState(RateListPresetState state) {

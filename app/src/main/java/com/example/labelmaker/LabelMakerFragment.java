@@ -24,6 +24,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.slider.Slider;
 import com.google.android.material.textfield.TextInputEditText;
@@ -47,7 +49,8 @@ public class LabelMakerFragment extends Fragment {
     private EditText textInput, rowsInput, columnsInput;
     private MaterialButton exportButton, textColorButton;
     private MaterialButton presetWhiteBtn, presetGrayBtn, presetBlackBtn;
-    private MaterialButton btnSavePreset, btnLoadPreset;
+    private MaterialButton btnSaveCurrentPreset;
+    private ChipGroup chipGroupPresets;
     private Slider fontSizeSlider;
     private TextView fontSizeValue;
 
@@ -71,6 +74,7 @@ public class LabelMakerFragment extends Fragment {
         loadConfiguration();
         setupListeners();
         updatePreview();
+        loadPresetChips();
 
         registerLaunchers();
 
@@ -119,8 +123,8 @@ public class LabelMakerFragment extends Fragment {
         presetGrayBtn = view.findViewById(R.id.preset_gray);
         presetBlackBtn = view.findViewById(R.id.preset_black);
         
-        btnSavePreset = view.findViewById(R.id.btn_save_preset);
-        btnLoadPreset = view.findViewById(R.id.btn_load_preset);
+        btnSaveCurrentPreset = view.findViewById(R.id.btn_save_current_preset);
+        chipGroupPresets = view.findViewById(R.id.chip_group_presets);
 
         // Wire export PNG button
         if (exportPngBtn != null) {
@@ -178,8 +182,7 @@ public class LabelMakerFragment extends Fragment {
         });
 
         // Preset buttons
-        btnSavePreset.setOnClickListener(v -> showSavePresetDialog());
-        btnLoadPreset.setOnClickListener(v -> showLoadPresetDialog());
+        btnSaveCurrentPreset.setOnClickListener(v -> showSavePresetDialog());
 
         // Export button
         exportButton.setOnClickListener(v -> exportToPdf());
@@ -301,42 +304,45 @@ public class LabelMakerFragment extends Fragment {
             state.text = textInput.getText().toString();
             state.rows = parseIntOrDefault(rowsInput.getText().toString(), 10);
             state.cols = parseIntOrDefault(columnsInput.getText().toString(), 3);
-            state.fontSize = fontSizeSlider.getValue();
+            state.fontSize = fontSize;
             state.textColor = textColor;
             state.backgroundColor = backgroundColor;
 
             presetManager.savePreset(name, state);
             Toast.makeText(requireContext(), "Preset '" + name + "' saved!", Toast.LENGTH_SHORT).show();
+            loadPresetChips();
         });
         builder.setNegativeButton("Cancel", null);
-        AlertDialog dialog = builder.create();
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.show();
+        builder.show();
     }
 
-    private void showLoadPresetDialog() {
-        List<String> presets = presetManager.getAllPresetNames();
-        if (presets.isEmpty()) {
-            Toast.makeText(requireContext(), "No saved presets found.", Toast.LENGTH_SHORT).show();
-            return;
+    private void loadPresetChips() {
+        chipGroupPresets.removeAllViews();
+        List<String> names = presetManager.getAllPresetNames();
+        for (String name : names) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(name);
+            chip.setCheckable(false);
+            chip.setCloseIconVisible(true);
+
+            chip.setOnClickListener(v -> {
+                LabelPresetState state = presetManager.loadPreset(name, LabelPresetState.class);
+                if (state != null) {
+                    applyPresetState(state);
+                    Toast.makeText(requireContext(), "Loaded preset: " + name, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Error loading preset", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            chip.setOnCloseIconClickListener(v -> {
+                presetManager.deletePreset(name);
+                chipGroupPresets.removeView(chip);
+                Toast.makeText(requireContext(), "Preset Deleted", Toast.LENGTH_SHORT).show();
+            });
+
+            chipGroupPresets.addView(chip);
         }
-
-        String[] presetArray = presets.toArray(new String[0]);
-
-        new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Load Preset")
-                .setItems(presetArray, (dialog, which) -> {
-                    String selectedPreset = presetArray[which];
-                    LabelPresetState state = presetManager.loadPreset(selectedPreset, LabelPresetState.class);
-                    if (state != null) {
-                        applyPresetState(state);
-                        Toast.makeText(requireContext(), "Loaded preset: " + selectedPreset, Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(requireContext(), "Error loading preset", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     private void applyPresetState(LabelPresetState state) {
@@ -344,9 +350,12 @@ public class LabelMakerFragment extends Fragment {
         rowsInput.setText(String.valueOf(state.rows));
         columnsInput.setText(String.valueOf(state.cols));
         
-        // Boundaries checks
-        float fs = Math.max(fontSizeSlider.getValueFrom(), Math.min(fontSizeSlider.getValueTo(), state.fontSize));
-        fontSizeSlider.setValue(fs);
+        // Handle font size bounds correctly based on your slider
+        if (state.fontSize >= 8 && state.fontSize <= 36) {
+            fontSize = state.fontSize;
+            fontSizeSlider.setValue(fontSize);
+            updateFontSizeDisplay();
+        }
         
         textColor = state.textColor;
         backgroundColor = state.backgroundColor;
