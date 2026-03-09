@@ -256,9 +256,29 @@ public class RateListFragment extends Fragment {
                 if (i < columns.size()) {
                     et.setText(columns.get(i).getName());
                 }
-                et.setTag("col_" + i);
+                et.setTag("col_name_" + i);
                 til.addView(et);
                 fieldsContainer.addView(til);
+
+                TextView weightLabel = new TextView(requireContext());
+                float currentWeight = (i < columns.size()) ? columns.get(i).getWeight() : ((i == 0) ? 2f : 1f);
+                weightLabel.setText("Width Weight: " + (int)currentWeight);
+                weightLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+                weightLabel.setPadding(dp(4), dp(8), dp(4), 0);
+                fieldsContainer.addView(weightLabel);
+
+                SeekBar weightSeek = new SeekBar(requireContext());
+                weightSeek.setMax(9); // 0-9 corresponding to weight 1-10
+                weightSeek.setProgress((int)currentWeight - 1);
+                weightSeek.setTag("col_weight_" + i);
+                weightSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        weightLabel.setText("Width Weight: " + (progress + 1));
+                    }
+                    @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+                    @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+                });
+                fieldsContainer.addView(weightSeek);
             }
         };
 
@@ -278,11 +298,13 @@ public class RateListFragment extends Fragment {
             int count = countSeek.getProgress();
             List<ColumnConfig> newColumns = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                TextInputEditText et = fieldsContainer.findViewWithTag("col_" + i);
+                TextInputEditText et = fieldsContainer.findViewWithTag("col_name_" + i);
                 String name = (et != null && et.getText() != null) ? et.getText().toString().trim() : "Col " + (i + 1);
                 if (name.isEmpty()) name = "Col " + (i + 1);
-                // First column gets weight 2, rest get 1
-                float weight = (i == 0) ? 2f : 1f;
+                
+                SeekBar weightSeek = fieldsContainer.findViewWithTag("col_weight_" + i);
+                float weight = (weightSeek != null) ? (weightSeek.getProgress() + 1) : ((i == 0) ? 2f : 1f);
+                
                 newColumns.add(new ColumnConfig(name, weight));
             }
             columns = newColumns;
@@ -293,7 +315,9 @@ public class RateListFragment extends Fragment {
             emptyMessage.setVisibility(View.VISIBLE);
         });
         builder.setNegativeButton("Cancel", null);
-        builder.show();
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 
     // ==================== HEADER ROW ====================
@@ -353,7 +377,9 @@ public class RateListFragment extends Fragment {
             emptyMessage.setVisibility(View.GONE);
         });
         builder.setNegativeButton("Cancel", null);
-        builder.show();
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 
     private void showAddSubheaderDialog() {
@@ -381,7 +407,9 @@ public class RateListFragment extends Fragment {
             }
         });
         builder.setNegativeButton("Cancel", null);
-        builder.show();
+        AlertDialog dialog = builder.create();
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 
     // ==================== EXPORT ====================
