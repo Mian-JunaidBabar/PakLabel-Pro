@@ -7,11 +7,11 @@ package com.example.labelmaker;
 public class ColumnConfig {
 
     private String name;
-    private float weight;
+    private int width;
 
-    public ColumnConfig(String name, float weight) {
+    public ColumnConfig(String name, int width) {
         this.name = name;
-        this.weight = weight;
+        this.width = width;
     }
 
     public String getName() {
@@ -22,11 +22,11 @@ public class ColumnConfig {
         this.name = name;
     }
 
-    public float getWeight() {
-        return weight;
+    public int getWidth() {
+        return width;
     }
 
-    public void setWeight(float weight) {
-        this.weight = weight;
+    public void setWidth(int width) {
+        this.width = width;
     }
 }

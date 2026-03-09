@@ -134,7 +134,7 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
             TextView cell = new TextView(container.getContext());
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, col.getWeight());
+                    dpToPx(cell, col.getWidth()), ViewGroup.LayoutParams.WRAP_CONTENT);
             cell.setLayoutParams(lp);
             cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
             cell.setTextColor(Color.parseColor("#1C1B1F"));

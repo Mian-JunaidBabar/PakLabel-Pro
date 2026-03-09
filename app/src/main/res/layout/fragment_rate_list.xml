@@ -111,15 +111,48 @@
                             android:textColor="?attr/colorPrimary" />
                     </LinearLayout>
 
-                    <SeekBar
-                        android:id="@+id/seekbar_row_padding"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:min="4"
-                        android:max="32"
-                        android:progress="12" />
+                        <SeekBar
+                            android:id="@+id/seekbar_row_padding"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:min="4"
+                            android:max="32"
+                            android:progress="12" />
 
-                </LinearLayout>
+                        <!-- Column Width Control -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_weight="1"
+                                android:layout_height="wrap_content"
+                                android:text="Selected Column Width"
+                                android:textAppearance="?attr/textAppearanceBodySmall" />
+
+                            <TextView
+                                android:id="@+id/column_width_label"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="-"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:textColor="?attr/colorPrimary" />
+                        </LinearLayout>
+
+                        <SeekBar
+                            android:id="@+id/seekbar_column_width"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:min="50"
+                            android:max="500"
+                            android:progress="100"
+                            android:enabled="false" />
+
+                    </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
@@ -142,7 +175,29 @@
                     android:orientation="vertical"
                     android:background="@color/white">
 
-                    <!-- Dynamic Header Row (built programmatically) -->
+                    <TextView
+                        android:id="@+id/tv_a4_warning"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="A4 size full or cannot be used for print"
+                        android:textColor="?attr/colorError"
+                        android:textStyle="bold"
+                        android:padding="8dp"
+                        android:visibility="gone"
+                        android:background="#FFCDD2"
+                        android:gravity="center" />
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fillViewport="true">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <!-- Dynamic Header Row (built programmatically) -->
                     <LinearLayout
                         android:id="@+id/header_row"
                         android:layout_width="match_parent"
@@ -165,16 +220,20 @@
                         android:nestedScrollingEnabled="false"
                         android:minHeight="100dp" />
 
-                    <TextView
-                        android:id="@+id/empty_message"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="No items added yet. Tap + to add products or subheaders."
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="#666666"
-                        android:gravity="center"
-                        android:padding="32dp"
-                        android:visibility="visible" />
+                            <!-- Empty State Message -->
+                            <TextView
+                                android:id="@+id/empty_message"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="No items in list. Add some using the + button."
+                                android:textAlignment="center"
+                                android:padding="32dp"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:visibility="gone" />
+
+                        </LinearLayout>
+                    </HorizontalScrollView>
 
                 </LinearLayout>
 

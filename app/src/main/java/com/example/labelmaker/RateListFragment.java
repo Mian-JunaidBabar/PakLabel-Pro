@@ -56,8 +56,9 @@ public class RateListFragment extends Fragment {
     private MaterialButton btnExportPdf, btnExportPng;
     private MaterialButton btnSavePreset, btnLoadPreset;
     private ExtendedFloatingActionButton fabAddItem;
-    private SeekBar seekbarFontSize, seekbarRowPadding;
-    private TextView fontSizeLabel, rowPaddingLabel;
+    private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
+    private TextView fontSizeLabel, rowPaddingLabel, columnWidthLabel, tvA4Warning;
+    private int selectedColumnIndex = -1;
 
     // Data
     private RateListAdapter adapter;
@@ -134,8 +135,11 @@ public class RateListFragment extends Fragment {
         fabAddItem = view.findViewById(R.id.fab_add_item);
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
         seekbarRowPadding = view.findViewById(R.id.seekbar_row_padding);
+        seekbarColumnWidth = view.findViewById(R.id.seekbar_column_width);
         fontSizeLabel = view.findViewById(R.id.font_size_label);
         rowPaddingLabel = view.findViewById(R.id.row_padding_label);
+        columnWidthLabel = view.findViewById(R.id.column_width_label);
+        tvA4Warning = view.findViewById(R.id.tv_a4_warning);
     }
 
     private void loadPreferences() {
@@ -158,9 +162,9 @@ public class RateListFragment extends Fragment {
 
     private void setupDefaultColumns() {
         if (columns.isEmpty()) {
-            columns.add(new ColumnConfig("Product Name", 2f));
-            columns.add(new ColumnConfig("Old Rate", 1f));
-            columns.add(new ColumnConfig("New Rate", 1f));
+            columns.add(new ColumnConfig("Sr.No", 50));
+            columns.add(new ColumnConfig("Description", 250));
+            columns.add(new ColumnConfig("Price", 100));
         }
     }
 
@@ -218,6 +222,33 @@ public class RateListFragment extends Fragment {
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) { savePreferences(); }
         });
+
+        seekbarColumnWidth.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (selectedColumnIndex != -1 && selectedColumnIndex < columns.size()) {
+                    columnWidthLabel.setText(String.valueOf(progress));
+                    columns.get(selectedColumnIndex).setWidth(progress);
+                    rebuildHeaderRow(); // Updates header widths instantly
+                    adapter.notifyDataSetChanged(); // Updates all rows instantly
+                    checkA4Constraints();
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+    }
+
+    private void checkA4Constraints() {
+        if (columns == null) return;
+        int totalWidth = 0;
+        for (ColumnConfig col : columns) {
+            totalWidth += col.getWidth();
+        }
+        if (totalWidth > 595) {
+            tvA4Warning.setVisibility(View.VISIBLE);
+        } else {
+            tvA4Warning.setVisibility(View.GONE);
+        }
     }
 
     // ==================== COLUMN SETUP ====================
@@ -268,26 +299,6 @@ public class RateListFragment extends Fragment {
                 et.setTag("col_name_" + i);
                 til.addView(et);
                 fieldsContainer.addView(til);
-
-                TextView weightLabel = new TextView(requireContext());
-                float currentWeight = (i < columns.size()) ? columns.get(i).getWeight() : ((i == 0) ? 2f : 1f);
-                weightLabel.setText("Width Weight: " + (int)currentWeight);
-                weightLabel.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
-                weightLabel.setPadding(dp(4), dp(8), dp(4), 0);
-                fieldsContainer.addView(weightLabel);
-
-                SeekBar weightSeek = new SeekBar(requireContext());
-                weightSeek.setMax(9); // 0-9 corresponding to weight 1-10
-                weightSeek.setProgress((int)currentWeight - 1);
-                weightSeek.setTag("col_weight_" + i);
-                weightSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                    @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                        weightLabel.setText("Width Weight: " + (progress + 1));
-                    }
-                    @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-                    @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-                });
-                fieldsContainer.addView(weightSeek);
             }
         };
 
@@ -311,12 +322,18 @@ public class RateListFragment extends Fragment {
                 String name = (et != null && et.getText() != null) ? et.getText().toString().trim() : "Col " + (i + 1);
                 if (name.isEmpty()) name = "Col " + (i + 1);
                 
-                SeekBar weightSeek = fieldsContainer.findViewWithTag("col_weight_" + i);
-                float weight = (weightSeek != null) ? (weightSeek.getProgress() + 1) : ((i == 0) ? 2f : 1f);
+                // Retain existing width if available, else default to 100
+                int width = (i < columns.size()) ? columns.get(i).getWidth() : 100;
                 
-                newColumns.add(new ColumnConfig(name, weight));
+                newColumns.add(new ColumnConfig(name, width));
             }
             columns = newColumns;
+            
+            // Reset selection since column count changed
+            selectedColumnIndex = -1;
+            seekbarColumnWidth.setEnabled(false);
+            columnWidthLabel.setText("-");
+
             adapter.setColumns(columns);
             adapter.clearRows();
             adapter.notifyDataSetChanged();
@@ -333,18 +350,40 @@ public class RateListFragment extends Fragment {
 
     private void rebuildHeaderRow() {
         headerRow.removeAllViews();
-        for (ColumnConfig col : columns) {
+        for (int i = 0; i < columns.size(); i++) {
+            ColumnConfig col = columns.get(i);
+            int index = i;
+
             TextView tv = new TextView(requireContext());
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, col.getWeight());
+                    dp(col.getWidth()), ViewGroup.LayoutParams.WRAP_CONTENT);
             tv.setLayoutParams(lp);
             tv.setText(col.getName());
             tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, globalFontSize);
             tv.setTypeface(null, Typeface.BOLD);
             tv.setTextColor(Color.parseColor("#006666"));
-            tv.setPadding(dp(4), 0, dp(4), 0);
+            tv.setPadding(dp(4), dp(8), dp(4), dp(8));
+            tv.setGravity(Gravity.CENTER);
+
+            // Highlight selected column
+            if (index == selectedColumnIndex) {
+                tv.setBackgroundColor(Color.parseColor("#B2DFDB")); // Darker teal highlight
+            } else {
+                tv.setBackgroundColor(Color.TRANSPARENT);
+            }
+
+            // Click to select
+            tv.setOnClickListener(v -> {
+                selectedColumnIndex = index;
+                rebuildHeaderRow(); // Re-render highlights
+                seekbarColumnWidth.setEnabled(true);
+                seekbarColumnWidth.setProgress(col.getWidth());
+                columnWidthLabel.setText(String.valueOf(col.getWidth()));
+            });
+
             headerRow.addView(tv);
         }
+        checkA4Constraints();
     }
 
     // ==================== ADD DIALOGS ====================
@@ -634,14 +673,6 @@ public class RateListFragment extends Fragment {
         canvas.drawText("Rate List", margin, currentY, paint);
         currentY += 40;
 
-        // Compute column pixel widths from weights
-        float totalWeight = 0f;
-        for (ColumnConfig c : cols) totalWeight += c.getWeight();
-        float[] colWidths = new float[cols.size()];
-        for (int i = 0; i < cols.size(); i++) {
-            colWidths[i] = (cols.get(i).getWeight() / totalWeight) * usableWidth;
-        }
-
         // Header row bg
         int headerHeight = 30;
         paint.setColor(Color.parseColor("#E0F2F1"));
@@ -651,10 +682,11 @@ public class RateListFragment extends Fragment {
         paint.setColor(Color.parseColor("#006666"));
         paint.setTextSize(textSize);
         paint.setFakeBoldText(true);
-        float hx = margin + 8;
+        float currentX = margin + 8;
         for (int i = 0; i < cols.size(); i++) {
-            canvas.drawText(cols.get(i).getName(), hx, currentY + headerHeight - 8, paint);
-            hx += colWidths[i];
+            ColumnConfig col = cols.get(i);
+            canvas.drawText(col.getName(), currentX, currentY + headerHeight - 8, paint);
+            currentX += col.getWidth();
         }
         currentY += headerHeight;
 
@@ -685,12 +717,18 @@ public class RateListFragment extends Fragment {
             } else {
                 // Product row
                 paint.setColor(Color.BLACK);
-                float cx = margin + 8;
+                currentX = margin + 8;
                 List<String> vals = row.getCellValues();
+                float y = currentY + rowHeight - 8;
                 for (int i = 0; i < cols.size(); i++) {
-                    String val = (i < vals.size()) ? vals.get(i) : "";
-                    canvas.drawText(val, cx, currentY + rowHeight - 8, paint);
-                    cx += colWidths[i];
+                    ColumnConfig col = cols.get(i);
+                    String cellText = (i < vals.size()) ? vals.get(i) : "";
+                    paint.setColor(Color.DKGRAY);
+                    int cellWidth = col.getWidth();
+
+                    // For the last cell to stretch if needed, though width is explicit now
+                    canvas.drawText(cellText, currentX, y, paint);
+                    currentX += cellWidth;
                 }
             }
 
