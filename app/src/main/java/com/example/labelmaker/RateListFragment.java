@@ -1041,28 +1041,99 @@ public class RateListFragment extends Fragment {
     private void savePngBackground(Uri uri) {
         Toast.makeText(requireContext(), "Exporting PNG in background...", Toast.LENGTH_SHORT).show();
 
+        final List<RowModel> rowSnapshot = new ArrayList<>(adapter.getRows());
+        final List<ColumnConfig> colSnapshot = new ArrayList<>(columns);
+        final float fontSizeSnapshot = globalFontSize;
+
         executorService.execute(() -> {
             try {
-                Bitmap bitmap = Bitmap.createBitmap(rateListContainer.getWidth(), rateListContainer.getHeight(), Bitmap.Config.ARGB_8888);
+                int neededWidth = 2 * 40;
+                for (ColumnConfig c : colSnapshot) {
+                    neededWidth += c.getWidth();
+                }
+                int pageWidth = Math.max(595, neededWidth);
+
+                int margin = 40;
+                int currentY = margin;
+                int headerHeight = 30;
+                int rowHeight = (int) (fontSizeSnapshot * 2.2f);
+
+                int totalHeight = margin * 2 + 50 + headerHeight + 5; // title + header
+                for (RowModel r : rowSnapshot) {
+                    totalHeight += rowHeight + 3; // row height + separator
+                }
+
+                Bitmap bitmap = Bitmap.createBitmap(pageWidth, totalHeight, Bitmap.Config.ARGB_8888);
                 Canvas canvas = new Canvas(bitmap);
                 canvas.drawColor(Color.WHITE);
 
-                mainThreadHandler.post(() -> {
-                    rateListContainer.draw(canvas);
-                    executorService.execute(() -> {
-                        try {
-                            OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
-                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
-                            os.close();
-                            mainThreadHandler.post(() ->
-                                Toast.makeText(requireContext(), "PNG saved successfully", Toast.LENGTH_LONG).show());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            mainThreadHandler.post(() ->
-                                Toast.makeText(requireContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                Paint paint = new Paint();
+                paint.setAntiAlias(true);
+
+                currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, colSnapshot, fontSizeSnapshot);
+
+                paint.setFakeBoldText(false);
+                paint.setTextSize(fontSizeSnapshot);
+
+                int srNoCount = 0;
+                for (int r = 0; r < rowSnapshot.size(); r++) {
+                    RowModel row = rowSnapshot.get(r);
+
+                    if (row.getViewType() == RowModel.TYPE_SUBHEADER) {
+                        int subBgColor = row.getCustomBgColor() != 0 ? row.getCustomBgColor() : subheaderBgColor;
+                        paint.setColor(subBgColor);
+                        canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
+                        paint.setColor(Color.parseColor("#006666"));
+                        paint.setFakeBoldText(true);
+                        paint.setTextSize(fontSizeSnapshot + 2);
+                        paint.setTextAlign(Paint.Align.LEFT);
+                        canvas.drawText(row.getSubheaderText(), margin + 8, currentY + rowHeight - 8, paint);
+                        paint.setFakeBoldText(false);
+                        paint.setTextSize(fontSizeSnapshot);
+                    } else {
+                        srNoCount++;
+                        int rBgColor = rowBgColor;
+                        if (row.getCustomBgColor() != 0) {
+                            rBgColor = row.getCustomBgColor();
+                        } else if (r % 2 == 0) {
+                            rBgColor = Color.WHITE;
                         }
-                    });
-                });
+                        paint.setColor(rBgColor);
+                        canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
+
+                        paint.setColor(fontColor);
+                        float currentX = margin;
+                        List<String> vals = row.getCellValues();
+                        float y = currentY + rowHeight - 8;
+
+                        paint.setTextAlign(Paint.Align.CENTER);
+                        for (int i = 0; i < colSnapshot.size(); i++) {
+                            ColumnConfig col = colSnapshot.get(i);
+                            String cellText = "";
+                            if (autoSrNo && i == 0 && "Sr. No".equals(col.getName())) {
+                                cellText = String.valueOf(srNoCount);
+                            } else if (i < vals.size()) {
+                                cellText = vals.get(i);
+                            }
+                            float cellFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : fontSizeSnapshot;
+                            paint.setTextSize(cellFs);
+                            canvas.drawText(cellText, currentX + col.getWidth() / 2f, y, paint);
+                            currentX += col.getWidth();
+                        }
+                    }
+                    currentY += rowHeight;
+                    paint.setColor(Color.LTGRAY);
+                    paint.setStrokeWidth(1);
+                    canvas.drawLine(margin, currentY, pageWidth - margin, currentY, paint);
+                    currentY += 3;
+                }
+
+                OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+                os.close();
+
+                mainThreadHandler.post(() ->
+                    Toast.makeText(requireContext(), "PNG saved successfully", Toast.LENGTH_LONG).show());
             } catch (Exception e) {
                 e.printStackTrace();
                 mainThreadHandler.post(() ->

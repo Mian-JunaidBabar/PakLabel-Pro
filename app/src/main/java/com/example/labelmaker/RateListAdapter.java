@@ -178,14 +178,9 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, cellFontSize);
             cell.setTextColor(fontColor);
 
-            // First column left-aligned, rest right-aligned
-            if (i == 0) {
-                cell.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-                cell.setPadding(0, 0, dpToPx(cell, 8), 0);
-            } else {
-                cell.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-                cell.setPadding(dpToPx(cell, 4), 0, dpToPx(cell, 4), 0);
-            }
+            // Center everything uniformly to match PDF
+            cell.setGravity(Gravity.CENTER);
+            cell.setPadding(dpToPx(cell, 4), 0, dpToPx(cell, 4), 0);
 
             // Populate with data or empty string
             if (autoSrNo && i == 0 && col.getName().equals("Sr. No")) {
