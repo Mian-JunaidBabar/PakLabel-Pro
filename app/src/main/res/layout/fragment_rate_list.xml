@@ -157,27 +157,35 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:layout_marginTop="12dp">
+                            android:layout_marginTop="8dp">
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_header_bg_color"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginEnd="4dp"
                                 android:text="Header Color"
-                                app:cornerRadius="8dp"
-                                style="@style/Widget.Material3.Button.TonalButton" />
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_marginEnd="4dp"/>
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btn_row_bg_color"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:layout_marginStart="4dp"
                                 android:text="Row Color"
-                                app:cornerRadius="8dp"
-                                style="@style/Widget.Material3.Button.TonalButton" />
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_marginStart="4dp"
+                                android:layout_marginEnd="4dp"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_font_color"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Font Color"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_marginStart="4dp"/>
                         </LinearLayout>
 
                     </LinearLayout>

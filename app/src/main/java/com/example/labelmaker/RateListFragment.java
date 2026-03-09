@@ -59,7 +59,7 @@ public class RateListFragment extends Fragment {
     private LinearLayout rateListContainer;
     private MaterialButton btnExportPdf, btnExportPng;
     private MaterialButton btnSaveCurrentPreset;
-    private MaterialButton btnHeaderBgColor, btnRowBgColor;
+    private MaterialButton btnHeaderBgColor, btnRowBgColor, btnFontColor;
     private ChipGroup chipGroupPresets;
     private ExtendedFloatingActionButton fabAddItem;
     private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
@@ -75,6 +75,7 @@ public class RateListFragment extends Fragment {
     private int globalRowPadding = 12;
     private int headerBgColor = Color.parseColor("#E0E0E0");
     private int rowBgColor = Color.parseColor("#F5F8F8");
+    private int fontColor = Color.BLACK;
 
     private PresetManager presetManager;
 
@@ -142,6 +143,7 @@ public class RateListFragment extends Fragment {
         btnSaveCurrentPreset = view.findViewById(R.id.btn_save_current_preset);
         btnHeaderBgColor = view.findViewById(R.id.btn_header_bg_color);
         btnRowBgColor = view.findViewById(R.id.btn_row_bg_color);
+        btnFontColor = view.findViewById(R.id.btn_font_color);
         chipGroupPresets = view.findViewById(R.id.chip_group_presets);
         fabAddItem = view.findViewById(R.id.fab_add_item);
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
@@ -159,6 +161,7 @@ public class RateListFragment extends Fragment {
         globalRowPadding = prefs.getInt("rowPadding", 12);
         headerBgColor = prefs.getInt("headerBgColor", Color.parseColor("#E0E0E0"));
         rowBgColor = prefs.getInt("rowBgColor", Color.parseColor("#F5F8F8"));
+        fontColor = prefs.getInt("fontColor", Color.BLACK);
 
         seekbarFontSize.setProgress((int) globalFontSize);
         seekbarRowPadding.setProgress(globalRowPadding);
@@ -172,6 +175,7 @@ public class RateListFragment extends Fragment {
         editor.putInt("rowPadding", globalRowPadding);
         editor.putInt("headerBgColor", headerBgColor);
         editor.putInt("rowBgColor", rowBgColor);
+        editor.putInt("fontColor", fontColor);
         editor.apply();
     }
 
@@ -189,6 +193,7 @@ public class RateListFragment extends Fragment {
         adapter.setFontSize(globalFontSize);
         adapter.setRowPadding(globalRowPadding);
         adapter.setRowBgColor(rowBgColor);
+        adapter.setFontColor(fontColor);
         rateListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         rateListRecycler.setAdapter(adapter);
 
@@ -248,6 +253,14 @@ public class RateListFragment extends Fragment {
             rowBgColor = color;
             adapter.setRowBgColor(rowBgColor);
             adapter.notifyDataSetChanged();
+            savePreferences();
+        }));
+
+        btnFontColor.setOnClickListener(v -> showColorPickerDialog("Font Color", fontColor, color -> {
+            fontColor = color;
+            adapter.setFontColor(fontColor);
+            adapter.notifyDataSetChanged();
+            rebuildHeaderRow(); // Also update header row font coloring
             savePreferences();
         }));
 
@@ -408,8 +421,7 @@ public class RateListFragment extends Fragment {
             List<ColumnConfig> newColumns = new ArrayList<>();
             for (int i = 0; i < count; i++) {
                 TextInputEditText et = fieldsContainer.findViewWithTag("col_name_" + i);
-                String name = (et != null && et.getText() != null) ? et.getText().toString().trim() : "Col " + (i + 1);
-                if (name.isEmpty()) name = "Col " + (i + 1);
+                String name = (et != null && et.getText() != null) ? et.getText().toString().trim() : "";
                 
                 // Retain existing width if available, else default to 100
                 int width = (i < columns.size()) ? columns.get(i).getWidth() : 100;
@@ -451,7 +463,7 @@ public class RateListFragment extends Fragment {
             tv.setText(col.getName());
             tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, globalFontSize);
             tv.setTypeface(null, Typeface.BOLD);
-            tv.setTextColor(Color.parseColor("#006666"));
+            tv.setTextColor(fontColor);
             tv.setPadding(dp(4), dp(8), dp(4), dp(8));
             tv.setGravity(Gravity.CENTER);
 
@@ -559,6 +571,7 @@ public class RateListFragment extends Fragment {
         int rowPadding;
         int headerBgColor;
         int rowBgColor;
+        int fontColor;
     }
 
     private void showSavePresetDialog() {
@@ -589,6 +602,7 @@ public class RateListFragment extends Fragment {
             state.rowPadding = globalRowPadding;
             state.headerBgColor = headerBgColor;
             state.rowBgColor = rowBgColor;
+            state.fontColor = fontColor;
 
             presetManager.savePreset(name, state);
             Toast.makeText(requireContext(), "Preset '" + name + "' saved!", Toast.LENGTH_SHORT).show();
@@ -659,6 +673,11 @@ public class RateListFragment extends Fragment {
         if (state.rowBgColor != 0) {
             rowBgColor = state.rowBgColor;
             adapter.setRowBgColor(rowBgColor);
+        }
+
+        if (state.fontColor != 0) {
+            fontColor = state.fontColor;
+            adapter.setFontColor(fontColor);
         }
 
         emptyMessage.setVisibility(adapter.getItemCount() > 0 ? View.GONE : View.VISIBLE);
@@ -817,14 +836,13 @@ public class RateListFragment extends Fragment {
                 
                 canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
 
-                paint.setColor(Color.BLACK);
+                paint.setColor(fontColor);
                 float currentX = margin + 8;
                 List<String> vals = row.getCellValues();
                 float y = currentY + rowHeight - 8;
                 for (int i = 0; i < cols.size(); i++) {
                     ColumnConfig col = cols.get(i);
                     String cellText = (i < vals.size()) ? vals.get(i) : "";
-                    paint.setColor(Color.DKGRAY);
                     canvas.drawText(cellText, currentX, y, paint);
                     currentX += col.getWidth();
                 }
@@ -857,7 +875,7 @@ public class RateListFragment extends Fragment {
         canvas.drawRect(margin, currentY, pageWidth - margin, currentY + headerHeight, paint);
 
         // Header text
-        paint.setColor(Color.parseColor("#006666"));
+        paint.setColor(fontColor);
         paint.setTextSize(textSize);
         paint.setFakeBoldText(true);
         float currentX = margin + 8;

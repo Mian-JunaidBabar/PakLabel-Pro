@@ -22,6 +22,7 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private float fontSize = 14f;   // sp
     private int rowPadding = 12;    // dp
     private int rowBgColor = Color.parseColor("#F5F8F8"); // default alternating color
+    private int fontColor = Color.BLACK; // default alternating color
 
     // --- Data setters ---
 
@@ -39,6 +40,10 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public void setRowBgColor(int color) {
         this.rowBgColor = color;
+    }
+
+    public void setFontColor(int color) {
+        this.fontColor = color;
     }
 
     public void addRow(RowModel row) {
