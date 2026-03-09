@@ -15,6 +15,7 @@ public class RowModel {
     private int viewType;
     private String subheaderText;
     private List<String> cellValues;
+    private int customBgColor = 0; // 0 = not set
 
     private RowModel() {
     }
@@ -51,5 +52,13 @@ public class RowModel {
 
     public List<String> getCellValues() {
         return cellValues;
+    }
+
+    public int getCustomBgColor() {
+        return customBgColor;
+    }
+
+    public void setCustomBgColor(int customBgColor) {
+        this.customBgColor = customBgColor;
     }
 }

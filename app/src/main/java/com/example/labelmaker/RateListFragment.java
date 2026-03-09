@@ -59,7 +59,7 @@ public class RateListFragment extends Fragment {
     private LinearLayout rateListContainer;
     private MaterialButton btnExportPdf, btnExportPng;
     private MaterialButton btnSaveCurrentPreset;
-    private MaterialButton btnHeaderBgColor, btnRowBgColor, btnFontColor;
+    private MaterialButton btnHeaderBgColor, btnRowBgColor, btnFontColor, btnSubheaderBgColor;
     private ChipGroup chipGroupPresets;
     private ExtendedFloatingActionButton fabAddItem;
     private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
@@ -75,6 +75,7 @@ public class RateListFragment extends Fragment {
     private int globalRowPadding = 12;
     private int headerBgColor = Color.parseColor("#E0E0E0");
     private int rowBgColor = Color.parseColor("#F5F8F8");
+    private int subheaderBgColor = Color.parseColor("#E0F2F1");
     private int fontColor = Color.BLACK;
 
     private PresetManager presetManager;
@@ -144,6 +145,7 @@ public class RateListFragment extends Fragment {
         btnHeaderBgColor = view.findViewById(R.id.btn_header_bg_color);
         btnRowBgColor = view.findViewById(R.id.btn_row_bg_color);
         btnFontColor = view.findViewById(R.id.btn_font_color);
+        btnSubheaderBgColor = view.findViewById(R.id.btn_subheader_bg_color);
         chipGroupPresets = view.findViewById(R.id.chip_group_presets);
         fabAddItem = view.findViewById(R.id.fab_add_item);
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
@@ -161,6 +163,7 @@ public class RateListFragment extends Fragment {
         globalRowPadding = prefs.getInt("rowPadding", 12);
         headerBgColor = prefs.getInt("headerBgColor", Color.parseColor("#E0E0E0"));
         rowBgColor = prefs.getInt("rowBgColor", Color.parseColor("#F5F8F8"));
+        subheaderBgColor = prefs.getInt("subheaderBgColor", Color.parseColor("#E0F2F1"));
         fontColor = prefs.getInt("fontColor", Color.BLACK);
 
         seekbarFontSize.setProgress((int) globalFontSize);
@@ -175,6 +178,7 @@ public class RateListFragment extends Fragment {
         editor.putInt("rowPadding", globalRowPadding);
         editor.putInt("headerBgColor", headerBgColor);
         editor.putInt("rowBgColor", rowBgColor);
+        editor.putInt("subheaderBgColor", subheaderBgColor);
         editor.putInt("fontColor", fontColor);
         editor.apply();
     }
@@ -193,6 +197,7 @@ public class RateListFragment extends Fragment {
         adapter.setFontSize(globalFontSize);
         adapter.setRowPadding(globalRowPadding);
         adapter.setRowBgColor(rowBgColor);
+        adapter.setSubheaderBgColor(subheaderBgColor);
         adapter.setFontColor(fontColor);
         rateListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         rateListRecycler.setAdapter(adapter);
@@ -264,6 +269,29 @@ public class RateListFragment extends Fragment {
             savePreferences();
         }));
 
+        btnSubheaderBgColor.setOnClickListener(v -> showColorPickerDialog("Subheader Background", subheaderBgColor, color -> {
+            subheaderBgColor = color;
+            adapter.setSubheaderBgColor(subheaderBgColor);
+            adapter.notifyDataSetChanged();
+            savePreferences();
+        }));
+
+        adapter.setOnRowClickListener((position, row) -> {
+            String title = row.getViewType() == RowModel.TYPE_SUBHEADER ? "Category Background" : "Row Background";
+            int defaultColor = row.getCustomBgColor() != 0 ? row.getCustomBgColor() : 
+                               (row.getViewType() == RowModel.TYPE_SUBHEADER ? subheaderBgColor : rowBgColor);
+            
+            showColorPickerDialog(title, defaultColor, color -> {
+                // If color is -1 (Clear), reset custom color
+                if (color == -1) {
+                    row.setCustomBgColor(0);
+                } else {
+                    row.setCustomBgColor(color);
+                }
+                adapter.notifyItemChanged(position);
+            });
+        });
+
         // Typography seekbars
         seekbarFontSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -320,12 +348,14 @@ public class RateListFragment extends Fragment {
 
     private void showColorPickerDialog(String title, int defaultColor, OnColorSelectedListener listener) {
         final int[] colors = {
+            -1, // Special value for Clear/Default
             Color.WHITE, Color.LTGRAY, Color.DKGRAY, Color.BLACK,
             Color.parseColor("#E0E0E0"), Color.parseColor("#E0F2F1"), Color.parseColor("#B2DFDB"), Color.parseColor("#006666"),
             Color.parseColor("#F5F8F8"), Color.parseColor("#FFCCBC"), Color.parseColor("#FFCDD2"),
             Color.parseColor("#D1C4E9"), Color.parseColor("#C5CAE9")
         };
         final String[] names = {
+            "Clear/Default Color",
             "White", "Light Gray", "Dark Gray", "Black",
             "Classic Gray", "Light Teal", "Teal Highlight", "Dark Teal",
             "Off White (Teal)", "Light Orange", "Light Red",
@@ -452,6 +482,14 @@ public class RateListFragment extends Fragment {
     private void rebuildHeaderRow() {
         headerRow.removeAllViews();
         headerRow.setBackgroundColor(headerBgColor);
+        
+        // Add click listener to the container to deselect
+        headerRow.setOnClickListener(v -> {
+            selectedColumnIndex = -1;
+            seekbarColumnWidth.setEnabled(false);
+            columnWidthLabel.setText("-");
+            rebuildHeaderRow();
+        });
         for (int i = 0; i < columns.size(); i++) {
             ColumnConfig col = columns.get(i);
             int index = i;
@@ -474,13 +512,19 @@ public class RateListFragment extends Fragment {
                 tv.setBackgroundColor(Color.TRANSPARENT);
             }
 
-            // Click to select
+            // Click to select/deselect
             tv.setOnClickListener(v -> {
-                selectedColumnIndex = index;
+                if (selectedColumnIndex == index) {
+                    selectedColumnIndex = -1;
+                    seekbarColumnWidth.setEnabled(false);
+                    columnWidthLabel.setText("-");
+                } else {
+                    selectedColumnIndex = index;
+                    seekbarColumnWidth.setEnabled(true);
+                    seekbarColumnWidth.setProgress(col.getWidth());
+                    columnWidthLabel.setText(String.valueOf(col.getWidth()));
+                }
                 rebuildHeaderRow(); // Re-render highlights
-                seekbarColumnWidth.setEnabled(true);
-                seekbarColumnWidth.setProgress(col.getWidth());
-                columnWidthLabel.setText(String.valueOf(col.getWidth()));
             });
 
             headerRow.addView(tv);
@@ -571,6 +615,7 @@ public class RateListFragment extends Fragment {
         int rowPadding;
         int headerBgColor;
         int rowBgColor;
+        int subheaderBgColor;
         int fontColor;
     }
 
@@ -602,6 +647,7 @@ public class RateListFragment extends Fragment {
             state.rowPadding = globalRowPadding;
             state.headerBgColor = headerBgColor;
             state.rowBgColor = rowBgColor;
+            state.subheaderBgColor = subheaderBgColor;
             state.fontColor = fontColor;
 
             presetManager.savePreset(name, state);
@@ -673,6 +719,11 @@ public class RateListFragment extends Fragment {
         if (state.rowBgColor != 0) {
             rowBgColor = state.rowBgColor;
             adapter.setRowBgColor(rowBgColor);
+        }
+
+        if (state.subheaderBgColor != 0) {
+            subheaderBgColor = state.subheaderBgColor;
+            adapter.setSubheaderBgColor(subheaderBgColor);
         }
 
         if (state.fontColor != 0) {
@@ -821,7 +872,8 @@ public class RateListFragment extends Fragment {
 
             if (row.getViewType() == RowModel.TYPE_SUBHEADER) {
                 // Subheader: tinted bg, bold, full width
-                paint.setColor(Color.parseColor("#E0F2F1"));
+                int subBgColor = row.getCustomBgColor() != 0 ? row.getCustomBgColor() : subheaderBgColor;
+                paint.setColor(subBgColor);
                 canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
                 paint.setColor(Color.parseColor("#006666"));
                 paint.setFakeBoldText(true);
@@ -831,8 +883,13 @@ public class RateListFragment extends Fragment {
                 paint.setTextSize(textSize);
             } else {
                 // Product row bg
-                if (r % 2 == 0) paint.setColor(Color.WHITE);
-                else paint.setColor(rowBgColor);
+                int rBgColor = rowBgColor;
+                if (row.getCustomBgColor() != 0) {
+                    rBgColor = row.getCustomBgColor();
+                } else if (r % 2 == 0) {
+                    rBgColor = Color.WHITE;
+                }
+                paint.setColor(rBgColor);
                 
                 canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
 

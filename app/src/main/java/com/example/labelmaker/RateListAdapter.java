@@ -22,7 +22,13 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private float fontSize = 14f;   // sp
     private int rowPadding = 12;    // dp
     private int rowBgColor = Color.parseColor("#F5F8F8"); // default alternating color
-    private int fontColor = Color.BLACK; // default alternating color
+    private int subheaderBgColor = Color.parseColor("#E0F2F1");
+    private int fontColor = Color.BLACK; // default text color
+
+    public interface OnRowClickListener {
+        void onRowClicked(int position, RowModel row);
+    }
+    private OnRowClickListener rowClickListener;
 
     // --- Data setters ---
 
@@ -44,6 +50,14 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public void setFontColor(int color) {
         this.fontColor = color;
+    }
+
+    public void setSubheaderBgColor(int color) {
+        this.subheaderBgColor = color;
+    }
+
+    public void setOnRowClickListener(OnRowClickListener listener) {
+        this.rowClickListener = listener;
     }
 
     public void addRow(RowModel row) {
@@ -110,6 +124,10 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         } else if (holder instanceof ProductViewHolder) {
             bindProduct((ProductViewHolder) holder, row, position);
         }
+
+        if (rowClickListener != null) {
+            holder.itemView.setOnClickListener(v -> rowClickListener.onRowClicked(position, row));
+        }
     }
 
     private void bindSubheader(SubheaderViewHolder holder, RowModel row) {
@@ -119,8 +137,10 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize + 2);
         int pad = dpToPx(tv, rowPadding);
         tv.setPadding(dpToPx(tv, 16), pad, dpToPx(tv, 16), pad);
-        tv.setBackgroundColor(Color.parseColor("#E0F2F1")); // light teal tint
-        tv.setTextColor(Color.parseColor("#006666"));
+        
+        int bgColor = row.getCustomBgColor() != 0 ? row.getCustomBgColor() : subheaderBgColor;
+        tv.setBackgroundColor(bgColor);
+        tv.setTextColor(fontColor);
     }
 
     private void bindProduct(ProductViewHolder holder, RowModel row, int position) {
@@ -130,12 +150,14 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         int pad = dpToPx(container, rowPadding);
         container.setPadding(dpToPx(container, 16), pad, dpToPx(container, 16), pad);
 
-        // Alternating row colors
-        if (position % 2 == 0) {
-            container.setBackgroundColor(Color.WHITE);
-        } else {
-            container.setBackgroundColor(rowBgColor);
+        // Row Background Logic
+        int bgColor = rowBgColor;
+        if (row.getCustomBgColor() != 0) {
+            bgColor = row.getCustomBgColor();
+        } else if (position % 2 == 0) {
+            bgColor = Color.WHITE;
         }
+        container.setBackgroundColor(bgColor);
 
         List<String> values = row.getCellValues();
 
@@ -147,7 +169,7 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
                     dpToPx(cell, col.getWidth()), ViewGroup.LayoutParams.WRAP_CONTENT);
             cell.setLayoutParams(lp);
             cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
-            cell.setTextColor(Color.parseColor("#1C1B1F"));
+            cell.setTextColor(fontColor);
 
             // First column left-aligned, rest right-aligned
             if (i == 0) {

@@ -350,8 +350,8 @@ public class LabelMakerFragment extends Fragment {
         rowsInput.setText(String.valueOf(state.rows));
         columnsInput.setText(String.valueOf(state.cols));
         
-        // Handle font size bounds correctly based on your slider
-        if (state.fontSize >= 8 && state.fontSize <= 36) {
+        // Handle font size bounds correctly based on your slider (6 to 72 in XML)
+        if (state.fontSize >= 6 && state.fontSize <= 72) {
             fontSize = state.fontSize;
             fontSizeSlider.setValue(fontSize);
             updateFontSizeDisplay();
