@@ -21,6 +21,7 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private List<ColumnConfig> columns = new ArrayList<>();
     private float fontSize = 14f;   // sp
     private int rowPadding = 12;    // dp
+    private int rowBgColor = Color.parseColor("#F5F8F8"); // default alternating color
 
     // --- Data setters ---
 
@@ -34,6 +35,10 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public void setRowPadding(int rowPadding) {
         this.rowPadding = rowPadding;
+    }
+
+    public void setRowBgColor(int color) {
+        this.rowBgColor = color;
     }
 
     public void addRow(RowModel row) {
@@ -124,7 +129,7 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         if (position % 2 == 0) {
             container.setBackgroundColor(Color.WHITE);
         } else {
-            container.setBackgroundColor(Color.parseColor("#F5F8F8"));
+            container.setBackgroundColor(rowBgColor);
         }
 
         List<String> values = row.getCellValues();

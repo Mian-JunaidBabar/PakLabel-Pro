@@ -59,6 +59,7 @@ public class RateListFragment extends Fragment {
     private LinearLayout rateListContainer;
     private MaterialButton btnExportPdf, btnExportPng;
     private MaterialButton btnSaveCurrentPreset;
+    private MaterialButton btnHeaderBgColor, btnRowBgColor;
     private ChipGroup chipGroupPresets;
     private ExtendedFloatingActionButton fabAddItem;
     private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
@@ -69,9 +70,11 @@ public class RateListFragment extends Fragment {
     private RateListAdapter adapter;
     private List<ColumnConfig> columns = new ArrayList<>();
 
-    // Typography
+    // Typography & Styling
     private float globalFontSize = 14f;
     private int globalRowPadding = 12;
+    private int headerBgColor = Color.parseColor("#E0E0E0");
+    private int rowBgColor = Color.parseColor("#F5F8F8");
 
     private PresetManager presetManager;
 
@@ -137,6 +140,8 @@ public class RateListFragment extends Fragment {
         btnExportPdf = view.findViewById(R.id.btn_export_pdf);
         btnExportPng = view.findViewById(R.id.btn_export_png);
         btnSaveCurrentPreset = view.findViewById(R.id.btn_save_current_preset);
+        btnHeaderBgColor = view.findViewById(R.id.btn_header_bg_color);
+        btnRowBgColor = view.findViewById(R.id.btn_row_bg_color);
         chipGroupPresets = view.findViewById(R.id.chip_group_presets);
         fabAddItem = view.findViewById(R.id.fab_add_item);
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
@@ -152,6 +157,8 @@ public class RateListFragment extends Fragment {
         SharedPreferences prefs = requireContext().getSharedPreferences(PREFS_NAME, 0);
         globalFontSize = prefs.getFloat("fontSize", 14f);
         globalRowPadding = prefs.getInt("rowPadding", 12);
+        headerBgColor = prefs.getInt("headerBgColor", Color.parseColor("#E0E0E0"));
+        rowBgColor = prefs.getInt("rowBgColor", Color.parseColor("#F5F8F8"));
 
         seekbarFontSize.setProgress((int) globalFontSize);
         seekbarRowPadding.setProgress(globalRowPadding);
@@ -163,6 +170,8 @@ public class RateListFragment extends Fragment {
         SharedPreferences.Editor editor = requireContext().getSharedPreferences(PREFS_NAME, 0).edit();
         editor.putFloat("fontSize", globalFontSize);
         editor.putInt("rowPadding", globalRowPadding);
+        editor.putInt("headerBgColor", headerBgColor);
+        editor.putInt("rowBgColor", rowBgColor);
         editor.apply();
     }
 
@@ -179,6 +188,7 @@ public class RateListFragment extends Fragment {
         adapter.setColumns(columns);
         adapter.setFontSize(globalFontSize);
         adapter.setRowPadding(globalRowPadding);
+        adapter.setRowBgColor(rowBgColor);
         rateListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         rateListRecycler.setAdapter(adapter);
 
@@ -228,6 +238,19 @@ public class RateListFragment extends Fragment {
         btnExportPng.setOnClickListener(v -> exportPng());
         btnSaveCurrentPreset.setOnClickListener(v -> showSavePresetDialog());
 
+        btnHeaderBgColor.setOnClickListener(v -> showColorPickerDialog("Header Background Color", headerBgColor, color -> {
+            headerBgColor = color;
+            headerRow.setBackgroundColor(headerBgColor);
+            savePreferences();
+        }));
+
+        btnRowBgColor.setOnClickListener(v -> showColorPickerDialog("Row Background Color", rowBgColor, color -> {
+            rowBgColor = color;
+            adapter.setRowBgColor(rowBgColor);
+            adapter.notifyDataSetChanged();
+            savePreferences();
+        }));
+
         // Typography seekbars
         seekbarFontSize.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -254,17 +277,54 @@ public class RateListFragment extends Fragment {
 
         seekbarColumnWidth.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (selectedColumnIndex != -1 && selectedColumnIndex < columns.size()) {
-                    columnWidthLabel.setText(String.valueOf(progress));
-                    columns.get(selectedColumnIndex).setWidth(progress);
-                    rebuildHeaderRow(); // Updates header widths instantly
-                    adapter.notifyDataSetChanged(); // Updates all rows instantly
-                    checkA4Constraints();
+                if (!fromUser || selectedColumnIndex == -1 || selectedColumnIndex >= columns.size()) return;
+
+                int currentTotal = 0;
+                for (int i=0; i<columns.size(); i++) {
+                    if (i != selectedColumnIndex) currentTotal += columns.get(i).getWidth();
                 }
+
+                if (currentTotal + progress > 595) {
+                    progress = 595 - currentTotal;
+                    seekBar.setProgress(progress);
+                    Toast.makeText(requireContext(), "Maximum A4 width (595pts) reached", Toast.LENGTH_SHORT).show();
+                }
+
+                columnWidthLabel.setText(String.valueOf(progress));
+                columns.get(selectedColumnIndex).setWidth(progress);
+                rebuildHeaderRow(); 
+                adapter.notifyDataSetChanged(); 
+                checkA4Constraints();
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+    }
+
+    private interface OnColorSelectedListener {
+        void onColorSelected(int color);
+    }
+
+    private void showColorPickerDialog(String title, int defaultColor, OnColorSelectedListener listener) {
+        final int[] colors = {
+            Color.WHITE, Color.LTGRAY, Color.DKGRAY, Color.BLACK,
+            Color.parseColor("#E0E0E0"), Color.parseColor("#E0F2F1"), Color.parseColor("#B2DFDB"), Color.parseColor("#006666"),
+            Color.parseColor("#F5F8F8"), Color.parseColor("#FFCCBC"), Color.parseColor("#FFCDD2"),
+            Color.parseColor("#D1C4E9"), Color.parseColor("#C5CAE9")
+        };
+        final String[] names = {
+            "White", "Light Gray", "Dark Gray", "Black",
+            "Classic Gray", "Light Teal", "Teal Highlight", "Dark Teal",
+            "Off White (Teal)", "Light Orange", "Light Red",
+            "Light Purple", "Light Blue"
+        };
+        
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setItems(names, (dialog, which) -> {
+                listener.onColorSelected(colors[which]);
+            })
+            .show();
     }
 
     private void checkA4Constraints() {
@@ -379,6 +439,7 @@ public class RateListFragment extends Fragment {
 
     private void rebuildHeaderRow() {
         headerRow.removeAllViews();
+        headerRow.setBackgroundColor(headerBgColor);
         for (int i = 0; i < columns.size(); i++) {
             ColumnConfig col = columns.get(i);
             int index = i;
@@ -496,6 +557,8 @@ public class RateListFragment extends Fragment {
         List<RowModel> rows;
         float fontSize;
         int rowPadding;
+        int headerBgColor;
+        int rowBgColor;
     }
 
     private void showSavePresetDialog() {
@@ -524,6 +587,8 @@ public class RateListFragment extends Fragment {
             state.rows = new ArrayList<>(adapter.getRows());
             state.fontSize = globalFontSize;
             state.rowPadding = globalRowPadding;
+            state.headerBgColor = headerBgColor;
+            state.rowBgColor = rowBgColor;
 
             presetManager.savePreset(name, state);
             Toast.makeText(requireContext(), "Preset '" + name + "' saved!", Toast.LENGTH_SHORT).show();
@@ -586,6 +651,16 @@ public class RateListFragment extends Fragment {
             seekbarRowPadding.setProgress(globalRowPadding);
         }
 
+        if (state.headerBgColor != 0) {
+            headerBgColor = state.headerBgColor;
+            headerRow.setBackgroundColor(headerBgColor);
+        }
+
+        if (state.rowBgColor != 0) {
+            rowBgColor = state.rowBgColor;
+            adapter.setRowBgColor(rowBgColor);
+        }
+
         emptyMessage.setVisibility(adapter.getItemCount() > 0 ? View.GONE : View.VISIBLE);
         adapter.notifyDataSetChanged();
         savePreferences();
@@ -631,14 +706,9 @@ public class RateListFragment extends Fragment {
                 int pageHeight = 842;
 
                 PdfDocument pdfDocument = new PdfDocument();
-                PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create();
-                PdfDocument.Page page = pdfDocument.startPage(pageInfo);
-                Canvas canvas = page.getCanvas();
-                canvas.drawColor(Color.WHITE);
+                
+                generateMultiPagePdf(pdfDocument, pageWidth, pageHeight, rowSnapshot, colSnapshot, fontSizeSnapshot);
 
-                drawRateListToCanvas(canvas, pageWidth, pageHeight, rowSnapshot, colSnapshot, fontSizeSnapshot);
-
-                pdfDocument.finishPage(page);
                 OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
                 pdfDocument.writeTo(os);
                 os.close();
@@ -689,15 +759,91 @@ public class RateListFragment extends Fragment {
 
     // ==================== CANVAS DRAWING ====================
 
-    private void drawRateListToCanvas(Canvas canvas, int pageWidth, int pageHeight,
-                                       List<RowModel> rows, List<ColumnConfig> cols, float textSize) {
+    private void generateMultiPagePdf(PdfDocument pdfDocument, int pageWidth, int pageHeight,
+                                      List<RowModel> rows, List<ColumnConfig> cols, float textSize) {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
         int margin = 40;
         int currentY = margin;
-        int usableWidth = pageWidth - 2 * margin;
+        int pageNumber = 1;
 
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
+        PdfDocument.Page page = pdfDocument.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+        canvas.drawColor(Color.WHITE);
+
+        currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, cols, textSize);
+
+        // Data rows
+        paint.setFakeBoldText(false);
+        paint.setTextSize(textSize);
+        int rowHeight = (int) (textSize * 2.2f);
+
+        for (int r = 0; r < rows.size(); r++) {
+            RowModel row = rows.get(r);
+            
+            // Check for page break
+            if (currentY + rowHeight > 780) {
+                pdfDocument.finishPage(page);
+                
+                pageNumber++;
+                pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
+                page = pdfDocument.startPage(pageInfo);
+                canvas = page.getCanvas();
+                canvas.drawColor(Color.WHITE);
+                
+                currentY = margin;
+                currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, cols, textSize);
+                
+                paint.setFakeBoldText(false);
+                paint.setTextSize(textSize);
+            }
+
+            if (row.getViewType() == RowModel.TYPE_SUBHEADER) {
+                // Subheader: tinted bg, bold, full width
+                paint.setColor(Color.parseColor("#E0F2F1"));
+                canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
+                paint.setColor(Color.parseColor("#006666"));
+                paint.setFakeBoldText(true);
+                paint.setTextSize(textSize + 2);
+                canvas.drawText(row.getSubheaderText(), margin + 8, currentY + rowHeight - 8, paint);
+                paint.setFakeBoldText(false);
+                paint.setTextSize(textSize);
+            } else {
+                // Product row bg
+                if (r % 2 == 0) paint.setColor(Color.WHITE);
+                else paint.setColor(rowBgColor);
+                
+                canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
+
+                paint.setColor(Color.BLACK);
+                float currentX = margin + 8;
+                List<String> vals = row.getCellValues();
+                float y = currentY + rowHeight - 8;
+                for (int i = 0; i < cols.size(); i++) {
+                    ColumnConfig col = cols.get(i);
+                    String cellText = (i < vals.size()) ? vals.get(i) : "";
+                    paint.setColor(Color.DKGRAY);
+                    canvas.drawText(cellText, currentX, y, paint);
+                    currentX += col.getWidth();
+                }
+            }
+
+            currentY += rowHeight;
+
+            // Row separator
+            paint.setColor(Color.LTGRAY);
+            paint.setStrokeWidth(1);
+            canvas.drawLine(margin, currentY, pageWidth - margin, currentY, paint);
+            currentY += 3;
+        }
+
+        // Finish the last page
+        pdfDocument.finishPage(page);
+    }
+
+    private int drawPdfHeader(Canvas canvas, Paint paint, int currentY, int margin, int pageWidth, List<ColumnConfig> cols, float textSize) {
         // Title
         paint.setTextSize(24);
         paint.setColor(Color.BLACK);
@@ -707,7 +853,7 @@ public class RateListFragment extends Fragment {
 
         // Header row bg
         int headerHeight = 30;
-        paint.setColor(Color.parseColor("#E0F2F1"));
+        paint.setColor(headerBgColor);
         canvas.drawRect(margin, currentY, pageWidth - margin, currentY + headerHeight, paint);
 
         // Header text
@@ -728,50 +874,7 @@ public class RateListFragment extends Fragment {
         canvas.drawLine(margin, currentY, pageWidth - margin, currentY, paint);
         currentY += 5;
 
-        // Data rows
-        paint.setFakeBoldText(false);
-        paint.setTextSize(textSize);
-        int rowHeight = (int) (textSize * 2.2f);
-
-        for (RowModel row : rows) {
-            if (currentY > pageHeight - 60) break;
-
-            if (row.getViewType() == RowModel.TYPE_SUBHEADER) {
-                // Subheader: tinted bg, bold, full width
-                paint.setColor(Color.parseColor("#E0F2F1"));
-                canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
-                paint.setColor(Color.parseColor("#006666"));
-                paint.setFakeBoldText(true);
-                paint.setTextSize(textSize + 2);
-                canvas.drawText(row.getSubheaderText(), margin + 8, currentY + rowHeight - 8, paint);
-                paint.setFakeBoldText(false);
-                paint.setTextSize(textSize);
-            } else {
-                // Product row
-                paint.setColor(Color.BLACK);
-                currentX = margin + 8;
-                List<String> vals = row.getCellValues();
-                float y = currentY + rowHeight - 8;
-                for (int i = 0; i < cols.size(); i++) {
-                    ColumnConfig col = cols.get(i);
-                    String cellText = (i < vals.size()) ? vals.get(i) : "";
-                    paint.setColor(Color.DKGRAY);
-                    int cellWidth = col.getWidth();
-
-                    // For the last cell to stretch if needed, though width is explicit now
-                    canvas.drawText(cellText, currentX, y, paint);
-                    currentX += cellWidth;
-                }
-            }
-
-            currentY += rowHeight;
-
-            // Row separator
-            paint.setColor(Color.LTGRAY);
-            paint.setStrokeWidth(1);
-            canvas.drawLine(margin, currentY, pageWidth - margin, currentY, paint);
-            currentY += 3;
-        }
+        return currentY;
     }
 
     // ==================== UTILITY ====================

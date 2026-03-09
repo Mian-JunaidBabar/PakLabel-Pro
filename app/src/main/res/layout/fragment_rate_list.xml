@@ -148,10 +148,37 @@
                             android:id="@+id/seekbar_column_width"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:min="50"
-                            android:max="500"
-                            android:progress="100"
+                            android:min="10"
+                            android:max="300"
                             android:enabled="false" />
+
+                        <!-- Table Colors -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="12dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_header_bg_color"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="4dp"
+                                android:text="Header Color"
+                                app:cornerRadius="8dp"
+                                style="@style/Widget.Material3.Button.TonalButton" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_row_bg_color"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="4dp"
+                                android:text="Row Color"
+                                app:cornerRadius="8dp"
+                                style="@style/Widget.Material3.Button.TonalButton" />
+                        </LinearLayout>
 
                     </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
