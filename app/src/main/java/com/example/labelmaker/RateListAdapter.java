@@ -1,75 +1,187 @@
 package com.example.labelmaker;
 
-import android.view.LayoutInflater;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class RateListAdapter extends RecyclerView.Adapter<RateListAdapter.RateViewHolder> {
+public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private List<RateItem> rateItems;
+    private List<RowModel> rows = new ArrayList<>();
+    private List<ColumnConfig> columns = new ArrayList<>();
+    private float fontSize = 14f;   // sp
+    private int rowPadding = 12;    // dp
 
-    public RateListAdapter() {
-        this.rateItems = new ArrayList<>();
+    // --- Data setters ---
+
+    public void setColumns(List<ColumnConfig> columns) {
+        this.columns = columns;
     }
 
-    @NonNull
-    @Override
-    public RateViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.rate_list_item, parent, false);
-        return new RateViewHolder(view);
+    public void setFontSize(float fontSize) {
+        this.fontSize = fontSize;
     }
 
-    @Override
-    public void onBindViewHolder(@NonNull RateViewHolder holder, int position) {
-        RateItem item = rateItems.get(position);
-        holder.productName.setText(item.getProductName());
-        holder.oldRate.setText(item.getOldRate());
-        holder.newRate.setText(item.getNewRate());
+    public void setRowPadding(int rowPadding) {
+        this.rowPadding = rowPadding;
+    }
 
-        // Alternating row colors for spreadsheet look
-        if (position % 2 == 0) {
-            holder.itemView.setBackgroundColor(android.graphics.Color.parseColor("#FFFFFF")); // White
-        } else {
-            holder.itemView.setBackgroundColor(android.graphics.Color.parseColor("#F5F8F8")); // Light background from Stitch
-        }
+    public void addRow(RowModel row) {
+        rows.add(row);
+        notifyItemInserted(rows.size() - 1);
+    }
+
+    public void clearRows() {
+        int size = rows.size();
+        rows.clear();
+        notifyItemRangeRemoved(0, size);
+    }
+
+    public List<RowModel> getRows() {
+        return rows;
+    }
+
+    public List<ColumnConfig> getColumns() {
+        return columns;
+    }
+
+    // --- ViewType ---
+
+    @Override
+    public int getItemViewType(int position) {
+        return rows.get(position).getViewType();
     }
 
     @Override
     public int getItemCount() {
-        return rateItems.size();
+        return rows.size();
     }
 
-    public void addItem(RateItem item) {
-        rateItems.add(item);
-        notifyItemInserted(rateItems.size() - 1);
+    // --- ViewHolder creation ---
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == RowModel.TYPE_SUBHEADER) {
+            TextView tv = new TextView(parent.getContext());
+            tv.setLayoutParams(new RecyclerView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            return new SubheaderViewHolder(tv);
+        } else {
+            LinearLayout row = new LinearLayout(parent.getContext());
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setLayoutParams(new RecyclerView.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            return new ProductViewHolder(row);
+        }
     }
 
-    public void clearItems() {
-        int size = rateItems.size();
-        rateItems.clear();
-        notifyItemRangeRemoved(0, size);
+    // --- Binding ---
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        RowModel row = rows.get(position);
+
+        if (holder instanceof SubheaderViewHolder) {
+            bindSubheader((SubheaderViewHolder) holder, row);
+        } else if (holder instanceof ProductViewHolder) {
+            bindProduct((ProductViewHolder) holder, row, position);
+        }
     }
 
-    public List<RateItem> getItems() {
-        return rateItems;
+    private void bindSubheader(SubheaderViewHolder holder, RowModel row) {
+        TextView tv = holder.textView;
+        tv.setText(row.getSubheaderText());
+        tv.setTypeface(null, Typeface.BOLD);
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize + 2);
+        int pad = dpToPx(tv, rowPadding);
+        tv.setPadding(dpToPx(tv, 16), pad, dpToPx(tv, 16), pad);
+        tv.setBackgroundColor(Color.parseColor("#E0F2F1")); // light teal tint
+        tv.setTextColor(Color.parseColor("#006666"));
     }
 
-    static class RateViewHolder extends RecyclerView.ViewHolder {
-        TextView productName;
-        TextView oldRate;
-        TextView newRate;
+    private void bindProduct(ProductViewHolder holder, RowModel row, int position) {
+        LinearLayout container = holder.container;
+        container.removeAllViews();
 
-        public RateViewHolder(@NonNull View itemView) {
-            super(itemView);
-            productName = itemView.findViewById(R.id.product_name);
-            oldRate = itemView.findViewById(R.id.old_rate);
-            newRate = itemView.findViewById(R.id.new_rate);
+        int pad = dpToPx(container, rowPadding);
+        container.setPadding(dpToPx(container, 16), pad, dpToPx(container, 16), pad);
+
+        // Alternating row colors
+        if (position % 2 == 0) {
+            container.setBackgroundColor(Color.WHITE);
+        } else {
+            container.setBackgroundColor(Color.parseColor("#F5F8F8"));
+        }
+
+        List<String> values = row.getCellValues();
+
+        for (int i = 0; i < columns.size(); i++) {
+            ColumnConfig col = columns.get(i);
+
+            TextView cell = new TextView(container.getContext());
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, col.getWeight());
+            cell.setLayoutParams(lp);
+            cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize);
+            cell.setTextColor(Color.parseColor("#1C1B1F"));
+
+            // First column left-aligned, rest right-aligned
+            if (i == 0) {
+                cell.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
+                cell.setPadding(0, 0, dpToPx(cell, 8), 0);
+            } else {
+                cell.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+                cell.setPadding(dpToPx(cell, 4), 0, dpToPx(cell, 4), 0);
+            }
+
+            // Populate with data or empty string
+            if (i < values.size()) {
+                cell.setText(values.get(i));
+            } else {
+                cell.setText("");
+            }
+
+            container.addView(cell);
+        }
+    }
+
+    private int dpToPx(View view, int dp) {
+        return (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, dp,
+                view.getContext().getResources().getDisplayMetrics());
+    }
+
+    // --- ViewHolders ---
+
+    static class SubheaderViewHolder extends RecyclerView.ViewHolder {
+        TextView textView;
+
+        SubheaderViewHolder(TextView tv) {
+            super(tv);
+            this.textView = tv;
+        }
+    }
+
+    static class ProductViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout container;
+
+        ProductViewHolder(LinearLayout layout) {
+            super(layout);
+            this.container = layout;
         }
     }
 }
