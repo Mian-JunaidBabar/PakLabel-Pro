@@ -7,6 +7,7 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Shader;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
@@ -28,6 +29,9 @@ public class A4PreviewView extends View {
     private int textColor = Color.BLACK;
     private int labelBackgroundColor = Color.WHITE;
     private float borderWidth = 2f;
+    private float letterSpacing = 0f;
+    private boolean isBold = false;
+    private boolean isItalic = false;
 
     private Paint gridPaint;
     private Paint textPaint;
@@ -115,6 +119,22 @@ public class A4PreviewView extends View {
         this.fontSize = Math.max(4f, fontSize);
         this.textColor = textColor;
         this.labelBackgroundColor = backgroundColor;
+        
+        invalidate();
+    }
+    
+    public void setTypography(float letterSpacing, boolean isBold, boolean isItalic) {
+        this.letterSpacing = letterSpacing;
+        this.isBold = isBold;
+        this.isItalic = isItalic;
+        
+        int textStyle = Typeface.NORMAL;
+        if (isBold && isItalic) textStyle = Typeface.BOLD_ITALIC;
+        else if (isBold) textStyle = Typeface.BOLD;
+        else if (isItalic) textStyle = Typeface.ITALIC;
+        
+        textPaint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, textStyle));
+        textPaint.setLetterSpacing(letterSpacing);
         
         invalidate();
     }

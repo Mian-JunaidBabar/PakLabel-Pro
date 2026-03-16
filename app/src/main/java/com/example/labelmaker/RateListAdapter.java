@@ -19,19 +19,41 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     private List<RowModel> rows = new ArrayList<>();
     private List<ColumnConfig> columns = new ArrayList<>();
-    private float fontSize = 14f;   // sp
-    private int rowPadding = 12;    // dp
+    private float fontSize = 14f; // sp
+    private int rowPadding = 12; // dp
     private int rowBgColor = Color.parseColor("#F5F8F8"); // default alternating color
     private int subheaderBgColor = Color.parseColor("#E0F2F1");
     private int fontColor = Color.BLACK; // default text color
     private boolean autoSrNo = false;
 
+    // Global Typography State
+    private float globalLetterSpacing = 0f;
+    private boolean globalBold = false;
+    private boolean globalItalic = false;
+
     public interface OnRowClickListener {
         void onRowClicked(int position, RowModel row);
     }
+
     private OnRowClickListener rowClickListener;
 
     // --- Data setters ---
+
+    public RateListAdapter() {
+        // default constructor
+    }
+
+    public void setGlobalLetterSpacing(float globalLetterSpacing) {
+        this.globalLetterSpacing = globalLetterSpacing;
+    }
+
+    public void setGlobalBold(boolean globalBold) {
+        this.globalBold = globalBold;
+    }
+
+    public void setGlobalItalic(boolean globalItalic) {
+        this.globalItalic = globalItalic;
+    }
 
     public void setColumns(List<ColumnConfig> columns) {
         this.columns = columns;
@@ -142,7 +164,7 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, fontSize + 2);
         int pad = dpToPx(tv, rowPadding);
         tv.setPadding(dpToPx(tv, 16), pad, dpToPx(tv, 16), pad);
-        
+
         int bgColor = row.getCustomBgColor() != 0 ? row.getCustomBgColor() : subheaderBgColor;
         tv.setBackgroundColor(bgColor);
         tv.setTextColor(fontColor);
@@ -173,10 +195,29 @@ public class RateListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     dpToPx(cell, col.getWidth()), ViewGroup.LayoutParams.WRAP_CONTENT);
             cell.setLayoutParams(lp);
-            
+
             float cellFontSize = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : fontSize;
             cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, cellFontSize);
             cell.setTextColor(fontColor);
+
+            // Letter Spacing
+            float letterSpacing = (col.getCustomLetterSpacing() != -1f) ? col.getCustomLetterSpacing()
+                    : globalLetterSpacing;
+            cell.setLetterSpacing(letterSpacing);
+
+            // Font Style
+            boolean isBold = (col.getCustomBold() != null) ? col.getCustomBold() : globalBold;
+            boolean isItalic = (col.getCustomItalic() != null) ? col.getCustomItalic() : globalItalic;
+
+            int textStyle = Typeface.NORMAL;
+            if (isBold && isItalic)
+                textStyle = Typeface.BOLD_ITALIC;
+            else if (isBold)
+                textStyle = Typeface.BOLD;
+            else if (isItalic)
+                textStyle = Typeface.ITALIC;
+
+            cell.setTypeface(null, textStyle);
 
             // Center everything uniformly to match PDF
             cell.setGravity(Gravity.CENTER);

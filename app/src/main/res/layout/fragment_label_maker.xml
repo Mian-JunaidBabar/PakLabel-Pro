@@ -199,6 +199,73 @@
                             android:stepSize="1" />
                     </LinearLayout>
 
+                    <!-- Letter Spacing Slider -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Letter Spacing"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/letter_spacing_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0.0em"
+                                android:background="?attr/colorPrimaryContainer"
+                                android:textColor="?attr/colorPrimary"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="2dp"
+                                android:textAppearance="?attr/textAppearanceLabelSmall"
+                                android:backgroundTint="?attr/colorPrimaryContainer" />
+                        </LinearLayout>
+
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/letter_spacing_slider"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:valueFrom="0.0"
+                            android:valueTo="0.5"
+                            android:value="0.0"
+                            android:stepSize="0.01" />
+                    </LinearLayout>
+
+                    <!-- Font Styling (Bold/Italic) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp">
+
+                        <CheckBox
+                            android:id="@+id/check_bold"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Bold"
+                            android:textStyle="bold" />
+
+                        <CheckBox
+                            android:id="@+id/check_italic"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Italic"
+                            android:textStyle="italic" />
+                    </LinearLayout>
+
                     <!-- Color & Styling -->
                     <TextView
                         android:layout_width="wrap_content"

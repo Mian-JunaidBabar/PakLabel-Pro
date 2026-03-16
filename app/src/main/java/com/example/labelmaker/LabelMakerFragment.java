@@ -51,12 +51,16 @@ public class LabelMakerFragment extends Fragment {
     private MaterialButton presetWhiteBtn, presetGrayBtn, presetBlackBtn;
     private MaterialButton btnSaveCurrentPreset;
     private ChipGroup chipGroupPresets;
-    private Slider fontSizeSlider;
-    private TextView fontSizeValue;
+    private Slider fontSizeSlider, letterSpacingSlider;
+    private TextView fontSizeValue, letterSpacingValue;
+    private android.widget.CheckBox checkBold, checkItalic;
 
     private int textColor = Color.BLACK;
     private int backgroundColor = Color.WHITE;
     private float fontSize = 12f;
+    private float letterSpacing = 0f;
+    private boolean isBold = false;
+    private boolean isItalic = false;
 
     private PresetManager presetManager;
 
@@ -117,6 +121,10 @@ public class LabelMakerFragment extends Fragment {
         MaterialButton exportPngBtn = view.findViewById(R.id.btn_export_png);
         fontSizeSlider = view.findViewById(R.id.font_size_slider);
         fontSizeValue = view.findViewById(R.id.font_size_value);
+        letterSpacingSlider = view.findViewById(R.id.letter_spacing_slider);
+        letterSpacingValue = view.findViewById(R.id.letter_spacing_value);
+        checkBold = view.findViewById(R.id.check_bold);
+        checkItalic = view.findViewById(R.id.check_italic);
         
         textColorButton = view.findViewById(R.id.text_color_button);
         presetWhiteBtn = view.findViewById(R.id.preset_white);
@@ -155,6 +163,24 @@ public class LabelMakerFragment extends Fragment {
         fontSizeSlider.addOnChangeListener((slider, value, fromUser) -> {
             fontSize = value;
             updateFontSizeDisplay();
+            updatePreview();
+        });
+
+        // Letter spacing control
+        letterSpacingSlider.addOnChangeListener((slider, value, fromUser) -> {
+            letterSpacing = value;
+            letterSpacingValue.setText(String.format(Locale.ROOT, "%.2fem", letterSpacing));
+            updatePreview();
+        });
+
+        // Bold & Italic toggles
+        checkBold.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isBold = isChecked;
+            updatePreview();
+        });
+
+        checkItalic.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            isItalic = isChecked;
             updatePreview();
         });
         
@@ -217,6 +243,9 @@ public class LabelMakerFragment extends Fragment {
             effectiveTextColor = Color.TRANSPARENT;
         }
 
+        // Apply typography
+        a4PreviewView.setTypography(letterSpacing, isBold, isItalic);
+
         // Only use solid background colors now
         a4PreviewView.setLabelData(text, rows, cols, fontSize, effectiveTextColor, backgroundColor);
     }
@@ -235,6 +264,9 @@ public class LabelMakerFragment extends Fragment {
         editor.putInt("rows", parseIntOrDefault(rowsInput.getText().toString(), 10));
         editor.putInt("cols", parseIntOrDefault(columnsInput.getText().toString(), 3));
         editor.putFloat("fontSize", fontSize);
+        editor.putFloat("letterSpacing", letterSpacing);
+        editor.putBoolean("isBold", isBold);
+        editor.putBoolean("isItalic", isItalic);
         editor.putInt("textColor", textColor);
         editor.putInt("backgroundColor", backgroundColor);
         editor.apply();
@@ -260,6 +292,16 @@ public class LabelMakerFragment extends Fragment {
         fontSizeSlider.setValue(fontSize);
         updateFontSizeDisplay();
         
+        letterSpacing = prefs.getFloat("letterSpacing", 0f);
+        letterSpacingSlider.setValue(letterSpacing);
+        letterSpacingValue.setText(String.format(Locale.ROOT, "%.2fem", letterSpacing));
+        
+        isBold = prefs.getBoolean("isBold", false);
+        checkBold.setChecked(isBold);
+        
+        isItalic = prefs.getBoolean("isItalic", false);
+        checkItalic.setChecked(isItalic);
+        
         updateButtonColor(textColorButton, textColor);
         updateButtonColor(presetWhiteBtn, Color.WHITE);
         updateButtonColor(presetGrayBtn, Color.parseColor("#BFBFBF"));
@@ -275,6 +317,9 @@ public class LabelMakerFragment extends Fragment {
         int rows;
         int cols;
         float fontSize;
+        float letterSpacing;
+        boolean isBold;
+        boolean isItalic;
         int textColor;
         int backgroundColor;
     }
@@ -305,6 +350,9 @@ public class LabelMakerFragment extends Fragment {
             state.rows = parseIntOrDefault(rowsInput.getText().toString(), 10);
             state.cols = parseIntOrDefault(columnsInput.getText().toString(), 3);
             state.fontSize = fontSize;
+            state.letterSpacing = letterSpacing;
+            state.isBold = isBold;
+            state.isItalic = isItalic;
             state.textColor = textColor;
             state.backgroundColor = backgroundColor;
 
@@ -356,6 +404,18 @@ public class LabelMakerFragment extends Fragment {
             fontSizeSlider.setValue(fontSize);
             updateFontSizeDisplay();
         }
+        
+        if (state.letterSpacing >= 0.0f && state.letterSpacing <= 0.5f) {
+            letterSpacing = state.letterSpacing;
+            letterSpacingSlider.setValue(letterSpacing);
+            letterSpacingValue.setText(String.format(Locale.ROOT, "%.2fem", letterSpacing));
+        }
+
+        isBold = state.isBold;
+        checkBold.setChecked(isBold);
+        
+        isItalic = state.isItalic;
+        checkItalic.setChecked(isItalic);
         
         textColor = state.textColor;
         backgroundColor = state.backgroundColor;

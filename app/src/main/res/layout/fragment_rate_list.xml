@@ -88,6 +88,63 @@
                         android:progress="14"
                         android:layout_marginBottom="12dp" />
 
+                    <!-- Letter Spacing -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:text="Letter Spacing"
+                            android:textAppearance="?attr/textAppearanceBodySmall" />
+
+                        <TextView
+                            android:id="@+id/letter_spacing_label"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.0em"
+                            android:textAppearance="?attr/textAppearanceLabelSmall"
+                            android:textColor="?attr/colorPrimary" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/seekbar_letter_spacing"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:min="0"
+                        android:max="50"
+                        android:progress="0"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Font Styling (Bold/Italic) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
+
+                        <CheckBox
+                            android:id="@+id/check_bold"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Bold"
+                            android:textStyle="bold" />
+
+                        <CheckBox
+                            android:id="@+id/check_italic"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Italic"
+                            android:textStyle="italic" />
+                    </LinearLayout>
+
                     <!-- Row Padding -->
                     <LinearLayout
                         android:layout_width="match_parent"

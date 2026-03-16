@@ -51,10 +51,10 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import android.widget.EditText;
 import android.widget.ScrollView;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
@@ -69,8 +69,10 @@ public class RateListFragment extends Fragment {
     private MaterialButton btnExportPdf, btnExportPng;
     private MaterialButton btnSaveCurrentPreset;
     private ChipGroup chipGroupPresets;
-    private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth;
-    private TextView fontSizeLabel, rowPaddingLabel, columnWidthLabel, tvA4Warning;
+    private SeekBar seekbarFontSize, seekbarRowPadding, seekbarColumnWidth, seekbarLetterSpacing;
+    private TextView fontSizeLabel, rowPaddingLabel, columnWidthLabel, letterSpacingLabel;
+    private android.widget.CheckBox checkBold, checkItalic;
+    private TextView tvA4Warning;
     private EditText etRateListTitle;
     private SwitchMaterial switchAutoSrNo;
     private boolean autoSrNo = false;
@@ -99,6 +101,10 @@ public class RateListFragment extends Fragment {
     private int rowBgColor = Color.parseColor("#F5F8F8");
     private int subheaderBgColor = Color.parseColor("#E0F2F1");
     private int fontColor = Color.BLACK;
+
+    private float globalLetterSpacing = 0f;
+    private boolean globalBold = false;
+    private boolean globalItalic = false;
 
     private PresetManager presetManager;
 
@@ -170,9 +176,13 @@ public class RateListFragment extends Fragment {
         seekbarFontSize = view.findViewById(R.id.seekbar_font_size);
         seekbarRowPadding = view.findViewById(R.id.seekbar_row_padding);
         seekbarColumnWidth = view.findViewById(R.id.seekbar_column_width);
+        seekbarLetterSpacing = view.findViewById(R.id.seekbar_letter_spacing);
         fontSizeLabel = view.findViewById(R.id.font_size_label);
         rowPaddingLabel = view.findViewById(R.id.row_padding_label);
         columnWidthLabel = view.findViewById(R.id.column_width_label);
+        letterSpacingLabel = view.findViewById(R.id.letter_spacing_label);
+        checkBold = view.findViewById(R.id.check_bold);
+        checkItalic = view.findViewById(R.id.check_italic);
         tvA4Warning = view.findViewById(R.id.tv_a4_warning);
         themeTeal = view.findViewById(R.id.theme_teal);
         themeBlue = view.findViewById(R.id.theme_blue);
@@ -196,10 +206,20 @@ public class RateListFragment extends Fragment {
         etRateListTitle.setText(savedTitle);
         switchAutoSrNo.setChecked(autoSrNo);
 
+        globalLetterSpacing = prefs.getFloat("letterSpacing", 0f);
+        globalBold = prefs.getBoolean("globalBold", false);
+        globalItalic = prefs.getBoolean("globalItalic", false);
+
         seekbarFontSize.setProgress((int) globalFontSize);
         seekbarRowPadding.setProgress(globalRowPadding);
+        seekbarLetterSpacing.setProgress((int) (globalLetterSpacing * 100));
+
         fontSizeLabel.setText((int) globalFontSize + "sp");
         rowPaddingLabel.setText(globalRowPadding + "dp");
+        letterSpacingLabel.setText(String.format(Locale.ROOT, "%.2fem", globalLetterSpacing));
+        
+        checkBold.setChecked(globalBold);
+        checkItalic.setChecked(globalItalic);
     }
 
     private void savePreferences() {
@@ -210,6 +230,9 @@ public class RateListFragment extends Fragment {
         editor.putInt("rowBgColor", rowBgColor);
         editor.putInt("subheaderBgColor", subheaderBgColor);
         editor.putInt("fontColor", fontColor);
+        editor.putFloat("letterSpacing", globalLetterSpacing);
+        editor.putBoolean("globalBold", globalBold);
+        editor.putBoolean("globalItalic", globalItalic);
         editor.putInt("themeIndex", selectedThemeIndex);
         editor.putBoolean("autoSrNo", autoSrNo);
         editor.putString("rateListTitle", etRateListTitle.getText().toString().trim());
@@ -233,6 +256,9 @@ public class RateListFragment extends Fragment {
         adapter.setSubheaderBgColor(subheaderBgColor);
         adapter.setFontColor(fontColor);
         adapter.setAutoSrNo(autoSrNo);
+        adapter.setGlobalLetterSpacing(globalLetterSpacing);
+        adapter.setGlobalBold(globalBold);
+        adapter.setGlobalItalic(globalItalic);
         rateListRecycler.setLayoutManager(new LinearLayoutManager(requireContext()));
         rateListRecycler.setAdapter(adapter);
 
@@ -362,6 +388,52 @@ public class RateListFragment extends Fragment {
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        seekbarLetterSpacing.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float value = progress / 100f;
+                if (selectedColumnIndex != -1) {
+                    columns.get(selectedColumnIndex).setCustomLetterSpacing(value);
+                } else {
+                    globalLetterSpacing = value;
+                }
+                letterSpacingLabel.setText(String.format(Locale.ROOT, "%.2fem", value));
+                adapter.setGlobalLetterSpacing(globalLetterSpacing);
+                adapter.setColumns(columns);
+                adapter.notifyDataSetChanged();
+                rebuildHeaderRow();
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) { savePreferences(); }
+        });
+
+        checkBold.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!buttonView.isPressed()) return; // only run from user click
+            if (selectedColumnIndex != -1) {
+                columns.get(selectedColumnIndex).setCustomBold(isChecked);
+            } else {
+                globalBold = isChecked;
+            }
+            adapter.setGlobalBold(globalBold);
+            adapter.setColumns(columns);
+            adapter.notifyDataSetChanged();
+            rebuildHeaderRow();
+            savePreferences();
+        });
+
+        checkItalic.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (!buttonView.isPressed()) return; // only run from user click
+            if (selectedColumnIndex != -1) {
+                columns.get(selectedColumnIndex).setCustomItalic(isChecked);
+            } else {
+                globalItalic = isChecked;
+            }
+            adapter.setGlobalItalic(globalItalic);
+            adapter.setColumns(columns);
+            adapter.notifyDataSetChanged();
+            rebuildHeaderRow();
+            savePreferences();
         });
     }
 
@@ -739,16 +811,36 @@ public class RateListFragment extends Fragment {
                     selectedColumnIndex = -1;
                     seekbarColumnWidth.setEnabled(false);
                     columnWidthLabel.setText("-");
+
+                    // Reset to global values
                     seekbarFontSize.setProgress((int) globalFontSize);
                     fontSizeLabel.setText((int) globalFontSize + "sp");
+                    
+                    seekbarLetterSpacing.setProgress((int) (globalLetterSpacing * 100));
+                    letterSpacingLabel.setText(String.format(Locale.ROOT, "%.2fem", globalLetterSpacing));
+                    
+                    checkBold.setChecked(globalBold);
+                    checkItalic.setChecked(globalItalic);
                 } else {
                     selectedColumnIndex = index;
                     seekbarColumnWidth.setEnabled(true);
                     seekbarColumnWidth.setProgress(col.getWidth());
                     columnWidthLabel.setText(String.valueOf(col.getWidth()));
+
+                    // Set to column's custom values (or global fallback if none exists)
                     float currentFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : globalFontSize;
                     seekbarFontSize.setProgress((int) currentFs);
                     fontSizeLabel.setText((int) currentFs + "sp");
+                    
+                    float currentLs = (col.getCustomLetterSpacing() != -1f) ? col.getCustomLetterSpacing() : globalLetterSpacing;
+                    seekbarLetterSpacing.setProgress((int) (currentLs * 100));
+                    letterSpacingLabel.setText(String.format(Locale.ROOT, "%.2fem", currentLs));
+                    
+                    boolean isB = (col.getCustomBold() != null) ? col.getCustomBold() : globalBold;
+                    checkBold.setChecked(isB);
+                    
+                    boolean isI = (col.getCustomItalic() != null) ? col.getCustomItalic() : globalItalic;
+                    checkItalic.setChecked(isI);
                 }
                 rebuildHeaderRow(); // Re-render highlights
             });
@@ -1009,6 +1101,9 @@ public class RateListFragment extends Fragment {
         final List<RowModel> rowSnapshot = new ArrayList<>(adapter.getRows());
         final List<ColumnConfig> colSnapshot = new ArrayList<>(columns);
         final float fontSizeSnapshot = globalFontSize;
+        final float lsSnapshot = globalLetterSpacing;
+        final boolean bSnapshot = globalBold;
+        final boolean iSnapshot = globalItalic;
 
         executorService.execute(() -> {
             try {
@@ -1021,7 +1116,7 @@ public class RateListFragment extends Fragment {
 
                 PdfDocument pdfDocument = new PdfDocument();
                 
-                generateMultiPagePdf(pdfDocument, pageWidth, pageHeight, rowSnapshot, colSnapshot, fontSizeSnapshot);
+                generateMultiPagePdf(pdfDocument, pageWidth, pageHeight, rowSnapshot, colSnapshot, fontSizeSnapshot, lsSnapshot, bSnapshot, iSnapshot);
 
                 OutputStream os = requireContext().getContentResolver().openOutputStream(uri);
                 pdfDocument.writeTo(os);
@@ -1044,6 +1139,9 @@ public class RateListFragment extends Fragment {
         final List<RowModel> rowSnapshot = new ArrayList<>(adapter.getRows());
         final List<ColumnConfig> colSnapshot = new ArrayList<>(columns);
         final float fontSizeSnapshot = globalFontSize;
+        final float lsSnapshot = globalLetterSpacing;
+        final boolean bSnapshot = globalBold;
+        final boolean iSnapshot = globalItalic;
 
         executorService.execute(() -> {
             try {
@@ -1070,10 +1168,12 @@ public class RateListFragment extends Fragment {
                 Paint paint = new Paint();
                 paint.setAntiAlias(true);
 
-                currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, colSnapshot, fontSizeSnapshot);
+                currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, colSnapshot, fontSizeSnapshot, lsSnapshot, bSnapshot, iSnapshot);
 
-                paint.setFakeBoldText(false);
+                // Set default row properties back (not bold)
+                paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL));
                 paint.setTextSize(fontSizeSnapshot);
+                paint.setLetterSpacing(0f);
 
                 int srNoCount = 0;
                 for (int r = 0; r < rowSnapshot.size(); r++) {
@@ -1084,11 +1184,14 @@ public class RateListFragment extends Fragment {
                         paint.setColor(subBgColor);
                         canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
                         paint.setColor(Color.parseColor("#006666"));
-                        paint.setFakeBoldText(true);
+                        paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+                        paint.setLetterSpacing(0f);
                         paint.setTextSize(fontSizeSnapshot + 2);
                         paint.setTextAlign(Paint.Align.LEFT);
                         canvas.drawText(row.getSubheaderText(), margin + 8, currentY + rowHeight - 8, paint);
-                        paint.setFakeBoldText(false);
+                        
+                        // restore plain text
+                        paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL));
                         paint.setTextSize(fontSizeSnapshot);
                     } else {
                         srNoCount++;
@@ -1115,7 +1218,19 @@ public class RateListFragment extends Fragment {
                             } else if (i < vals.size()) {
                                 cellText = vals.get(i);
                             }
+                            
                             float cellFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : fontSizeSnapshot;
+                            float cellLs = (col.getCustomLetterSpacing() != -1f) ? col.getCustomLetterSpacing() : lsSnapshot;
+                            boolean cellB = (col.getCustomBold() != null) ? col.getCustomBold() : bSnapshot;
+                            boolean cellI = (col.getCustomItalic() != null) ? col.getCustomItalic() : iSnapshot;
+                            
+                            int style = android.graphics.Typeface.NORMAL;
+                            if (cellB && cellI) style = android.graphics.Typeface.BOLD_ITALIC;
+                            else if (cellB) style = android.graphics.Typeface.BOLD;
+                            else if (cellI) style = android.graphics.Typeface.ITALIC;
+                            
+                            paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, style));
+                            paint.setLetterSpacing(cellLs);
                             paint.setTextSize(cellFs);
                             canvas.drawText(cellText, currentX + col.getWidth() / 2f, y, paint);
                             currentX += col.getWidth();
@@ -1145,7 +1260,8 @@ public class RateListFragment extends Fragment {
     // ==================== CANVAS DRAWING ====================
 
     private void generateMultiPagePdf(PdfDocument pdfDocument, int pageWidth, int pageHeight,
-                                      List<RowModel> rows, List<ColumnConfig> cols, float textSize) {
+                                      List<RowModel> rows, List<ColumnConfig> cols, float textSize,
+                                      float letterSpacing, boolean isBold, boolean isItalic) {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
 
@@ -1158,10 +1274,11 @@ public class RateListFragment extends Fragment {
         Canvas canvas = page.getCanvas();
         canvas.drawColor(Color.WHITE);
 
-        currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, cols, textSize);
+        currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, cols, textSize, letterSpacing, isBold, isItalic);
 
         // Data rows
-        paint.setFakeBoldText(false);
+        paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL));
+        paint.setLetterSpacing(0f);
         paint.setTextSize(textSize);
         int rowHeight = (int) (textSize * 2.2f);
 
@@ -1179,9 +1296,10 @@ public class RateListFragment extends Fragment {
                 canvas.drawColor(Color.WHITE);
                 
                 currentY = margin;
-                currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, cols, textSize);
+                currentY = drawPdfHeader(canvas, paint, currentY, margin, pageWidth, cols, textSize, letterSpacing, isBold, isItalic);
                 
-                paint.setFakeBoldText(false);
+                paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL));
+                paint.setLetterSpacing(0f);
                 paint.setTextSize(textSize);
             }
 
@@ -1191,10 +1309,11 @@ public class RateListFragment extends Fragment {
                 paint.setColor(subBgColor);
                 canvas.drawRect(margin, currentY, pageWidth - margin, currentY + rowHeight, paint);
                 paint.setColor(Color.parseColor("#006666"));
-                paint.setFakeBoldText(true);
+                paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD));
+                paint.setLetterSpacing(0f);
                 paint.setTextSize(textSize + 2);
                 canvas.drawText(row.getSubheaderText(), margin + 8, currentY + rowHeight - 8, paint);
-                paint.setFakeBoldText(false);
+                paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL));
                 paint.setTextSize(textSize);
             } else {
                 // Product row bg
@@ -1231,8 +1350,21 @@ public class RateListFragment extends Fragment {
                         cellText = vals.get(i);
                     }
                     float cellFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : textSize;
+                    float cellLs = (col.getCustomLetterSpacing() != -1f) ? col.getCustomLetterSpacing() : letterSpacing;
+                    boolean cellB = (col.getCustomBold() != null) ? col.getCustomBold() : isBold;
+                    boolean cellI = (col.getCustomItalic() != null) ? col.getCustomItalic() : isItalic;
+                    
+                    int style = android.graphics.Typeface.NORMAL;
+                    if (cellB && cellI) style = android.graphics.Typeface.BOLD_ITALIC;
+                    else if (cellB) style = android.graphics.Typeface.BOLD;
+                    else if (cellI) style = android.graphics.Typeface.ITALIC;
+                    
+                    paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, style));
+                    paint.setLetterSpacing(cellLs);
                     paint.setTextSize(cellFs);
                     
+                    // Left align for PDF product row
+                    paint.setTextAlign(Paint.Align.LEFT);
                     canvas.drawText(cellText, currentX, y, paint);
                     currentX += col.getWidth();
                 }
@@ -1251,7 +1383,8 @@ public class RateListFragment extends Fragment {
         pdfDocument.finishPage(page);
     }
 
-    private int drawPdfHeader(Canvas canvas, Paint paint, int currentY, int margin, int pageWidth, List<ColumnConfig> cols, float textSize) {
+    private int drawPdfHeader(Canvas canvas, Paint paint, int currentY, int margin, int pageWidth, List<ColumnConfig> cols, float textSize,
+                              float lsSnapshot, boolean bSnapshot, boolean iSnapshot) {
         // Title
         String title = etRateListTitle.getText().toString().trim();
         if (title.isEmpty()) title = "Meher Cables Rate List";
@@ -1271,12 +1404,26 @@ public class RateListFragment extends Fragment {
 
         // Header text
         paint.setColor(fontColor);
-        paint.setFakeBoldText(true);
+        paint.setLetterSpacing(0f); // Default for headers unless overridden
+        
         float currentX = margin + 8;
         for (int i = 0; i < cols.size(); i++) {
             ColumnConfig col = cols.get(i);
+            
             float headerFs = (col.getCustomFontSize() != -1f) ? col.getCustomFontSize() : textSize;
+            float headerLs = (col.getCustomLetterSpacing() != -1f) ? col.getCustomLetterSpacing() : lsSnapshot;
+            boolean headerB = (col.getCustomBold() != null) ? col.getCustomBold() : true; // headers usually bold, fallback true? Actually let's combine it with bSnapshot. Let's say Headers are always bold unless user turns off global bold explicitly? Wait, if they check bold, they want it bold. The header was ALWAYS bold before.
+            // Let's keep headers bold ALWAYS, but add Italic conditionally.
+            boolean headerI = (col.getCustomItalic() != null) ? col.getCustomItalic() : iSnapshot;
+            
+            int style = android.graphics.Typeface.BOLD;
+            if (headerI) style = android.graphics.Typeface.BOLD_ITALIC;
+            
+            paint.setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, style));
+            paint.setLetterSpacing(headerLs);
             paint.setTextSize(headerFs);
+            
+            paint.setTextAlign(Paint.Align.LEFT);
             canvas.drawText(col.getName(), currentX, currentY + headerHeight - 8, paint);
             currentX += col.getWidth();
         }
